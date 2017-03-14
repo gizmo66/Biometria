@@ -20,7 +20,7 @@ public class Renderer {
     private static final String FILE_NAME = "fingerprint_001.jpg";
     private static final String ERROR_OPENING_IMAGE_MSG = "Error opening image: ";
     private static final String WINDOW_TITLE = "Input Image";
-    private static final String INFO_LOADING_IMAGE_MSG = "Loading image from path: {}";
+    private static final String INFO_LOADING_IMAGE_MSG = "Loading image from path:\n {}";
     private static final double SCALE = 0.5;
     private static final int WINDOW_POS_X = 20;
     private static final int WINDOW_POS_Y = 20;
@@ -37,7 +37,7 @@ public class Renderer {
 
     private Image loadImage() throws CannotLoadImageException {
         File file = new File(FILE_NAME);
-        String absolutePath = file.getAbsolutePath().replaceAll("\\\\", "/").replace(file.getName(), "") + "src/main/resources/" + file.getName();
+        String absolutePath = file.getAbsolutePath().replaceAll("\\\\", "/").replace(file.getName(), "") + "FingerPrintsRecognition/src/main/resources/" + file.getName();
         absolutePath = absolutePath.replaceAll("//", "");
 
         log.info(INFO_LOADING_IMAGE_MSG, absolutePath);

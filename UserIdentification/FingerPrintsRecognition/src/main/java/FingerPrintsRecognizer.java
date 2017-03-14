@@ -6,16 +6,19 @@ import org.opencv.core.Core;
  */
 
 @Slf4j
-public class Recognizer {
+public class FingerPrintsRecognizer {
 
     private static final String WELCOME_MESSAGE = "Welcome to OpenCV ver. {} ";
     private static final String LIB_NAME = "opencv_java320";
 
-    public static void main(String[] args) {
+    public boolean recognize() {
         System.loadLibrary(LIB_NAME);
         log.info(WELCOME_MESSAGE, Core.VERSION);
 
         Renderer renderer = new Renderer();
         renderer.render();
+
+        //TODO akolodziejek: zwrócić wynik sprawdzenia odcisków palców
+        return true;
     }
 }
