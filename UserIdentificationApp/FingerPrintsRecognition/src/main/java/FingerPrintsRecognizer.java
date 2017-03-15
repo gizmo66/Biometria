@@ -16,7 +16,7 @@ import java.io.File;
  */
 
 @Slf4j
-public class FingerPrintsRecognizer {
+public class FingerPrintsRecognizer implements Recognizer {
 
     private static final String WELCOME_MESSAGE = "Welcome to OpenCV ver. {} ";
     private static final String LIB_NAME = "opencv_java320";
@@ -28,6 +28,7 @@ public class FingerPrintsRecognizer {
     private static final int WINDOW_POS_X = 20;
     private static final int WINDOW_POS_Y = 20;
 
+    @Override
     public boolean recognize(String username) {
         System.loadLibrary(LIB_NAME);
         log.info(WELCOME_MESSAGE, Core.VERSION);

@@ -5,19 +5,14 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>Studia.Biometria</groupId>
-    <artifactId>UserIdentification</artifactId>
+    <artifactId>UserIdentificationApp</artifactId>
     <packaging>pom</packaging>
     <version>1.0-SNAPSHOT</version>
     <modules>
         <module>Core</module>
+        <module>UserIdentificationService</module>
+        <module>FingerPrintsRecognition</module>
+        <module>VoiceRecognition</module>
     </modules>
-    <dependencies>
-        <dependency>
-            <groupId>Studia.Biometria</groupId>
-            <artifactId>FingerPrintsRecognition</artifactId>
-            <version>1.0-SNAPSHOT</version>
-        </dependency>
-    </dependencies>
-
 
 </project>
