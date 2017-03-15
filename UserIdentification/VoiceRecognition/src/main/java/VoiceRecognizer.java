@@ -3,6 +3,7 @@
  */
 public class VoiceRecognizer {
 
-    public void recognize() {
+    public boolean recognize() {
+        return true;
     }
 }
