@@ -25,5 +25,6 @@ public class LoginFrame extends JFrame {
         frame.setLayout(new FlowLayout());
         frame.getContentPane().add(btnLogin);
         frame.setVisible(true);
+        frame.setLocation(560, 340);
     }
 }
