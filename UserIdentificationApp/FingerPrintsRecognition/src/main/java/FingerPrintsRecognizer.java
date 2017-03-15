@@ -1,5 +1,6 @@
 import lombok.extern.slf4j.Slf4j;
 import org.opencv.core.Core;
+import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.Size;
 import org.opencv.imgcodecs.Imgcodecs;
@@ -38,39 +39,105 @@ public class FingerPrintsRecognizer implements Recognizer {
             img = loadImage();
             return identifyUser(img);
         } catch (CannotLoadImageException e) {
-            log.error(e.getMessage(), e);
+            log.error("Cannot load image", e);
+            return false;
+        } catch (Exception e) {
+            log.error("Unexpected exception while identifying user", e);
             return false;
         }
 
     }
 
     private boolean identifyUser(Image img) {
-        convertToBlackAndWhite(img);
-        convertToBinary(img);
-        convertToLines(img);
-        extractCharacteristic(img);
-        return compareToStoredFingerprint(img);
+        int displayIteration = 0;
+        displayImage(img, displayIteration);
+
+        Image blackAndWhiteImage = convertToBlackAndWhite(img);
+        displayImage(blackAndWhiteImage, ++displayIteration);
+
+        Image binaryImage = convertToBinary(blackAndWhiteImage);
+        displayImage(binaryImage, ++displayIteration);
+
+        Image imageFromLines = convertToLines(binaryImage);
+        displayImage(binaryImage, ++displayIteration);
+
+        extractCharacteristic(imageFromLines);
+        displayImage(imageFromLines, ++displayIteration);
+
+        return compareToStoredFingerprint();
     }
 
-    private boolean compareToStoredFingerprint(Image img) {
-
+    private boolean compareToStoredFingerprint() {
         return true;
     }
 
-    private void extractCharacteristic(Image img) {
-        displayImage(img);
+    private Image extractCharacteristic(Image img) {
+        return img;
     }
 
-    private void convertToLines(Image img) {
-        displayImage(img);
+    private Image convertToLines(Image img) {
+        return img;
     }
 
-    private void convertToBinary(Image img) {
-        displayImage(img);
+    private Image convertToBinary(Image img) {
+        return img;
     }
 
-    private void convertToBlackAndWhite(Image img) {
-        displayImage(img);
+    /**
+     * Zamiana kolorowego obrazka na skalę szarości:
+     * <p>
+     * Wszystko, co musimy zrobić, to powtórzenie 3 prostych kroków dla każdego piksela obrazka.
+     * <p>
+     * 1. Pobierz wartość RGB piksela
+     * 2. Znajdź średnią RGB np.: Avg = (R+G+B)/3
+     * 3. Zamień wartości R, G i B piksela wartością średnią (Avg) obliczoną w punkcie 2.
+     */
+    private Image convertToBlackAndWhite(Image image) {
+        Mat src = bufferedImageToMat((BufferedImage) image);
+        Image result = toBufferedImage(src);
+        int height = ((BufferedImage) result).getHeight();
+        int width = ((BufferedImage) result).getWidth();
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                int p = ((BufferedImage) result).getRGB(x, y);
+
+                /*
+                Przesunięcie bitowe w prawo (ang. shift right)
+
+                Jest to operacja dwuargumentowa. W językach programowania bądź w pseudokodzie zapisywana jest z reguły jako:
+                    a shr b
+                    a >> b
+                Operacja polega na przesunięciu a o b bitów w prawo. Operacja ta jest równoważna dzieleniu całkowitemu przez 2.
+                Przesunięcie o 1 bit to podzielenie a przez 2, przesunięcie o 2 bity to dwukrotne podzielenie a przez 2, itd.
+                */
+
+                int a = (p >> 24) & 0xff; //przesuń w prawo o 24 bity i pozostaw tylko najmniej znączący bit
+                int r = (p >> 16) & 0xff; //przesuń w prawo o 16 bitów i pozostaw tylko najmniej znączący bit
+                int g = (p >> 8) & 0xff; //przesuń w prawo o 8 bitów i pozostaw tylko najmniej znączący bit
+                int b = p & 0xff; //pozostaw tylko najmniej znączący bit
+
+                int average = (r + g + b) / 3;
+
+                /*
+                Przesunięcie bitowe w lewo (ang. shift left)
+
+                Jest to operacja dwuargumentowa. W językach programowania bądź w pseudokodzie zapisywana jest z reguły jako:
+                    a shl b
+                    a << b
+
+                Operacja polega na przesunięciu a o b bitów w lewo. Przy czym bity pojawiające się z prawej strony
+                (uzupełniające przesunięcie) są ustawiane na 0. Operacja ta jest równoważna mnożeniu przez 2.
+                Przesunięcie o 1 bit to przemnożenie a przez 2, przesunięcie o 2 bity to dwukrotne pomnożenie a przez 2, itd.
+
+                operator "|" (OR) zwraca 0, wyłącznie jeśli oba bity są 0.
+                */
+
+                p = (a << 24) | (average << 16) | (average << 8) | average;
+
+                ((BufferedImage) result).setRGB(x, y, p);
+            }
+        }
+        return result;
     }
 
     private Image loadImage() throws CannotLoadImageException {
@@ -105,9 +172,16 @@ public class FingerPrintsRecognizer implements Recognizer {
         return image;
     }
 
-    private void displayImage(Image img) {
+    public static Mat bufferedImageToMat(BufferedImage bi) {
+        Mat mat = new Mat(bi.getHeight(), bi.getWidth(), CvType.CV_8UC3);
+        byte[] data = ((DataBufferByte) bi.getRaster().getDataBuffer()).getData();
+        mat.put(0, 0, data);
+        return mat;
+    }
+
+    private void displayImage(Image img, int iteration) {
         ImageIcon icon = new ImageIcon(img);
-        FingerPrintRecognitionDialog dialog = new FingerPrintRecognitionDialog(icon, WINDOW_POS_X, WINDOW_POS_Y);
+        FingerPrintRecognitionDialog dialog = new FingerPrintRecognitionDialog(icon, WINDOW_POS_X + 50 * iteration, WINDOW_POS_Y + 50 * iteration);
         dialog.setVisible(true);
     }
 }
