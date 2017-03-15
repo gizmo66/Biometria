@@ -36,13 +36,41 @@ public class FingerPrintsRecognizer implements Recognizer {
         Image img;
         try {
             img = loadImage();
-            displayImage(img);
+            return identifyUser(img);
         } catch (CannotLoadImageException e) {
             log.error(e.getMessage(), e);
+            return false;
         }
 
-        //TODO akolodziejek: zwrócić wynik sprawdzenia odcisków palców
+    }
+
+    private boolean identifyUser(Image img) {
+        convertToBlackAndWhite(img);
+        convertToBinary(img);
+        convertToLines(img);
+        extractCharacteristic(img);
+        return compareToStoredFingerprint(img);
+    }
+
+    private boolean compareToStoredFingerprint(Image img) {
+
         return true;
+    }
+
+    private void extractCharacteristic(Image img) {
+        displayImage(img);
+    }
+
+    private void convertToLines(Image img) {
+        displayImage(img);
+    }
+
+    private void convertToBinary(Image img) {
+        displayImage(img);
+    }
+
+    private void convertToBlackAndWhite(Image img) {
+        displayImage(img);
     }
 
     private Image loadImage() throws CannotLoadImageException {
