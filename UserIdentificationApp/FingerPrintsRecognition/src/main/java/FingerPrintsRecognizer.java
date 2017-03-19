@@ -23,7 +23,7 @@ public class FingerPrintsRecognizer implements Recognizer {
     private static final String WELCOME_MESSAGE = "Welcome to OpenCV ver. {} ";
     private static final String LIB_NAME = "opencv_java320";
 
-    private static final String FILE_NAME = "fingerprint_001.jpg";
+    private static final String FILE_NAME = "fingerprint_002.jpg";
     private static final String ERROR_OPENING_IMAGE_MSG = "Error opening image: ";
     private static final String INFO_LOADING_IMAGE_MSG = "Loading image from path:\n {}";
     private static final double SCALE = 0.5;
@@ -94,7 +94,7 @@ public class FingerPrintsRecognizer implements Recognizer {
                 Color bwPixel;
                 //porównuję tylko wartość niebieskiego, bo zakładam, że fukcja operuje na obrazku w skali szarości
                 //w związku z tym wartości czeronego i zielonego będą takie same
-                if (pixel.getBlue() < 128) bwPixel = new Color(0, 0, 0);
+                if (pixel.getBlue() < 170) bwPixel = new Color(0, 0, 0);
                 else bwPixel = new Color(255, 255, 255);
 
 
@@ -170,8 +170,15 @@ public class FingerPrintsRecognizer implements Recognizer {
 
     private void displayImage(Image img, int iteration, String windowName) {
         ImageIcon icon = new ImageIcon(img);
-        FingerPrintRecognitionDialog dialog =
-                new FingerPrintRecognitionDialog(icon, WINDOW_POS_X + 50 * iteration, WINDOW_POS_Y + 50 * iteration, windowName);
+        int x = WINDOW_POS_X + 380 * iteration;
+        int y = WINDOW_POS_Y;
+
+        if(iteration > 2) {
+            x = WINDOW_POS_X + 380 * (iteration - 3);
+            y = WINDOW_POS_Y + 240;
+        }
+
+        FingerPrintRecognitionDialog dialog = new FingerPrintRecognitionDialog(icon, x, y, windowName);
         dialog.setVisible(true);
     }
 }
