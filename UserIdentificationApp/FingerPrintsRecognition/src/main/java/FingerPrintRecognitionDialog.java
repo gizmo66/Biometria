@@ -5,10 +5,8 @@ import javax.swing.*;
  */
 public class FingerPrintRecognitionDialog extends JFrame {
 
-    private static final String WINDOW_TITLE = "Input Image";
-
-    public FingerPrintRecognitionDialog(ImageIcon icon, int x, int y) {
-        super(WINDOW_TITLE);
+    public FingerPrintRecognitionDialog(ImageIcon icon, int x, int y, String windowName) {
+        super(windowName);
         JLabel label = new JLabel(icon);
         this.add(label);
         this.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);

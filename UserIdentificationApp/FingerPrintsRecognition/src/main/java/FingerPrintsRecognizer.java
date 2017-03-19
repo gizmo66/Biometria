@@ -50,19 +50,19 @@ public class FingerPrintsRecognizer implements Recognizer {
 
     private boolean identifyUser(Image img) {
         int displayIteration = 0;
-        displayImage(img, displayIteration);
+        displayImage(img, displayIteration, "Input image");
 
         Image blackAndWhiteImage = convertToBlackAndWhite(img);
-        displayImage(blackAndWhiteImage, ++displayIteration);
+        displayImage(blackAndWhiteImage, ++displayIteration, "Greyscale image");
 
         Image binaryImage = convertToBinary(blackAndWhiteImage);
-        displayImage(binaryImage, ++displayIteration);
+        displayImage(binaryImage, ++displayIteration, "Black and white image");
 
         Image imageFromLines = convertToLines(binaryImage);
-        displayImage(binaryImage, ++displayIteration);
+        displayImage(binaryImage, ++displayIteration, "Lines extracted");
 
         extractCharacteristic(imageFromLines);
-        displayImage(imageFromLines, ++displayIteration);
+        displayImage(imageFromLines, ++displayIteration, "Extracted characteristics");
 
         return compareToStoredFingerprint();
     }
@@ -179,9 +179,10 @@ public class FingerPrintsRecognizer implements Recognizer {
         return mat;
     }
 
-    private void displayImage(Image img, int iteration) {
+    private void displayImage(Image img, int iteration, String windowName) {
         ImageIcon icon = new ImageIcon(img);
-        FingerPrintRecognitionDialog dialog = new FingerPrintRecognitionDialog(icon, WINDOW_POS_X + 50 * iteration, WINDOW_POS_Y + 50 * iteration);
+        FingerPrintRecognitionDialog dialog =
+                new FingerPrintRecognitionDialog(icon, WINDOW_POS_X + 50 * iteration, WINDOW_POS_Y + 50 * iteration, windowName);
         dialog.setVisible(true);
     }
 }
