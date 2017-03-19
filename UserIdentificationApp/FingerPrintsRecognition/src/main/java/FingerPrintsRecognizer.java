@@ -10,6 +10,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
+import java.awt.Color;
 import java.io.File;
 
 /**
@@ -80,7 +81,27 @@ public class FingerPrintsRecognizer implements Recognizer {
     }
 
     private Image convertToBinary(Image img) {
-        return img;
+        Mat src = bufferedImageToMat((BufferedImage) img);
+        Image result = toBufferedImage(src);
+        int height = ((BufferedImage) result).getHeight();
+        int width = ((BufferedImage) result).getWidth();
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                //klasa Color zajmuje się za nas reprezentowaniem piksela RGB za pomocą pojedynczego int'a
+                Color pixel = new Color(((BufferedImage) result).getRGB(x, y));
+
+                //to piksel który będzie czarny lub biały
+                Color bwPixel;
+                //porównuję tylko wartość niebieskiego, bo zakładam, że fukcja operuje na obrazku w skali szarości
+                //w związku z tym wartości czeronego i zielonego będą takie same
+                if (pixel.getBlue() < 128) bwPixel = new Color(0, 0, 0);
+                else bwPixel = new Color(255, 255, 255);
+
+
+                ((BufferedImage) result).setRGB(x, y, bwPixel.getRGB());
+            }
+        }
+        return result;
     }
 
     /**
