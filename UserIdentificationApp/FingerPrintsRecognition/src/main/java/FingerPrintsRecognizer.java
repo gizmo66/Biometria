@@ -118,44 +118,12 @@ public class FingerPrintsRecognizer implements Recognizer {
         Image result = toBufferedImage(src);
         int height = ((BufferedImage) result).getHeight();
         int width = ((BufferedImage) result).getWidth();
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                int p = ((BufferedImage) result).getRGB(x, y);
-
-                /*
-                Przesunięcie bitowe w prawo (ang. shift right)
-
-                Jest to operacja dwuargumentowa. W językach programowania bądź w pseudokodzie zapisywana jest z reguły jako:
-                    a shr b
-                    a >> b
-                Operacja polega na przesunięciu a o b bitów w prawo. Operacja ta jest równoważna dzieleniu całkowitemu przez 2.
-                Przesunięcie o 1 bit to podzielenie a przez 2, przesunięcie o 2 bity to dwukrotne podzielenie a przez 2, itd.
-                */
-
-                int a = (p >> 24) & 0xff; //przesuń w prawo o 24 bity i pozostaw tylko najmniej znączący bit
-                int r = (p >> 16) & 0xff; //przesuń w prawo o 16 bitów i pozostaw tylko najmniej znączący bit
-                int g = (p >> 8) & 0xff; //przesuń w prawo o 8 bitów i pozostaw tylko najmniej znączący bit
-                int b = p & 0xff; //pozostaw tylko najmniej znączący bit
-
-                int average = (r + g + b) / 3;
-
-                /*
-                Przesunięcie bitowe w lewo (ang. shift left)
-
-                Jest to operacja dwuargumentowa. W językach programowania bądź w pseudokodzie zapisywana jest z reguły jako:
-                    a shl b
-                    a << b
-
-                Operacja polega na przesunięciu a o b bitów w lewo. Przy czym bity pojawiające się z prawej strony
-                (uzupełniające przesunięcie) są ustawiane na 0. Operacja ta jest równoważna mnożeniu przez 2.
-                Przesunięcie o 1 bit to przemnożenie a przez 2, przesunięcie o 2 bity to dwukrotne pomnożenie a przez 2, itd.
-
-                operator "|" (OR) zwraca 0, wyłącznie jeśli oba bity są 0.
-                */
-
-                p = (a << 24) | (average << 16) | (average << 8) | average;
-
-                ((BufferedImage) result).setRGB(x, y, p);
+        for (int h = 0; h < height; h++) {
+            for (int w = 0; w < width; w++) {
+                Color pixel = new Color(((BufferedImage) result).getRGB(w, h));
+                int average = (pixel.getRed() + pixel.getGreen() + pixel.getBlue()) / 3;
+                Color greyScalePixel = new Color(average, average, average);
+                ((BufferedImage) result).setRGB(w, h, greyScalePixel.getRGB());
             }
         }
         return result;
