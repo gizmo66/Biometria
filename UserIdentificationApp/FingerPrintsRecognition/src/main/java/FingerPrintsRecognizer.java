@@ -23,7 +23,8 @@ public class FingerPrintsRecognizer implements Recognizer {
     private static final String WELCOME_MESSAGE = "Welcome to OpenCV ver. {} ";
     private static final String LIB_NAME = "opencv_java320";
 
-    private static final String FILE_NAME = "fingerprint_002.jpg";
+    private static final String FILE_NAME1 = "fingerprint_002.jpg";
+    private static final String FILE_NAME = "1_1.png";
     private static final String ERROR_OPENING_IMAGE_MSG = "Error opening image: ";
     private static final String INFO_LOADING_IMAGE_MSG = "Loading image from path:\n {}";
     private static final double SCALE = 0.5;
@@ -77,7 +78,34 @@ public class FingerPrintsRecognizer implements Recognizer {
     }
 
     private Image convertToLines(Image img) {
+
+        int height = ((BufferedImage) img).getHeight();
+        int width = ((BufferedImage) img).getWidth();
+
+        int element1[][] = {{0,0,0}, {-1,1,-1}, {1,1,1}};
+        int element2[][] = {{-1,0,0}, {1,1,0}, {-1,1,-1}};
+        int element3[][] = {{1,-1,0}, {1,1,0}, {1,-1,0}};
+        int element4[][] = {{-1,1,-1}, {1,1,0}, {-1,0,0}};
+        int element5[][] = {{1,1,1}, {-1,1,-1}, {0,0,0}};
+        int element6[][] = {{-1,1,-1}, {0,1,1}, {0,0,-1}};
+        int element7[][] = {{0,-1,1}, {0,1,1}, {0,-1,1}};
+        int element8[][] = {{0,0,-1}, {0,1,1}, {-1,1,-1}};
+
+        int[][][] elements = {element1,element2,element3,element4,element5,element6,element7,element8};
+
+        if(compareImages(img, img, height, width)) System.out.print("they are the same");
+
         return img;
+    }
+
+    private boolean compareImages(Image img1, Image img2, int height, int width){
+        boolean flag = true;
+        for(int y = 0; y < height && flag; y++){
+            for (int x = 0; x < width; x++){
+                if(((BufferedImage) img1).getRGB(x, y) != ((BufferedImage) img1).getRGB(x, y)) flag = false;
+            }
+        }
+        return flag;
     }
 
     private Image convertToBinary(Image img) {

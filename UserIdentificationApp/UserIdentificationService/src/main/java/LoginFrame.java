@@ -1,7 +1,5 @@
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 
 /**
  * @author Adam
@@ -9,22 +7,21 @@ import java.awt.event.ActionListener;
 public class LoginFrame extends JFrame {
 
     public LoginFrame(int width, int height) {
-        final JFrame frame = new JFrame("Login");
-        final JButton btnLogin = new JButton("Log in");
+        setTitle("Login");
+        final JButton btnLogin = new JButton("Login");
 
         btnLogin.addActionListener(
-                new ActionListener(){
-                    public void actionPerformed(ActionEvent e) {
-                        LoginDialog loginDlg = new LoginDialog(frame);
-                        loginDlg.setVisible(true);
-                    }
+                e -> {
+                    UsernameFrame loginDlg = new UsernameFrame(width, height);
+                    loginDlg.setVisible(true);
+                    dispose();
                 });
 
-        frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-        frame.setSize(width, height);
-        frame.setLayout(new FlowLayout());
-        frame.getContentPane().add(btnLogin);
-        frame.setVisible(true);
-        frame.setLocation(560, 340);
+        setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+        setSize(width, height);
+        setLayout(new FlowLayout());
+        getContentPane().add(btnLogin);
+        setVisible(true);
+        setLocation(560, 340);
     }
 }
