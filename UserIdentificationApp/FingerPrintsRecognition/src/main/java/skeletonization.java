@@ -36,12 +36,15 @@ public class skeletonization {
 
         int[][][] elements = {element1,element2,element3,element4,element5,element6,element7,element8};
 
+        boolean maskFlag = true;
         while(!compareImages(originalImg, thinnedImg)){
             originalImg = thinnedImg;
 
             for(int y = 1; y < height - 1; y++){ //nie biorę pod uwagę jednego piksela na granicy obrazka
                 for (int x = 1; x < width - 1; x++){
+                    for (int i = 0; i < 8; i++){
 
+                    }
                 }
             }
 
