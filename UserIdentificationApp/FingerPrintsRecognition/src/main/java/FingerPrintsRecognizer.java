@@ -60,7 +60,7 @@ public class FingerPrintsRecognizer implements Recognizer {
         Image binaryImage = convertToBinary(blackAndWhiteImage);
         displayImage(binaryImage, ++displayIteration, "Black and white image");
 
-        Image imageFromLines = convertToLines(binaryImage);
+        Image imageFromLines = skeletonization.skeletonize(binaryImage);
         displayImage(binaryImage, ++displayIteration, "Lines extracted");
 
         extractCharacteristic(imageFromLines);
@@ -75,37 +75,6 @@ public class FingerPrintsRecognizer implements Recognizer {
 
     private Image extractCharacteristic(Image img) {
         return img;
-    }
-
-    private Image convertToLines(Image img) {
-
-        int height = ((BufferedImage) img).getHeight();
-        int width = ((BufferedImage) img).getWidth();
-
-        int element1[][] = {{0,0,0}, {-1,1,-1}, {1,1,1}};
-        int element2[][] = {{-1,0,0}, {1,1,0}, {-1,1,-1}};
-        int element3[][] = {{1,-1,0}, {1,1,0}, {1,-1,0}};
-        int element4[][] = {{-1,1,-1}, {1,1,0}, {-1,0,0}};
-        int element5[][] = {{1,1,1}, {-1,1,-1}, {0,0,0}};
-        int element6[][] = {{-1,1,-1}, {0,1,1}, {0,0,-1}};
-        int element7[][] = {{0,-1,1}, {0,1,1}, {0,-1,1}};
-        int element8[][] = {{0,0,-1}, {0,1,1}, {-1,1,-1}};
-
-        int[][][] elements = {element1,element2,element3,element4,element5,element6,element7,element8};
-
-        if(compareImages(img, img, height, width)) System.out.print("they are the same");
-
-        return img;
-    }
-
-    private boolean compareImages(Image img1, Image img2, int height, int width){
-        boolean flag = true;
-        for(int y = 0; y < height && flag; y++){
-            for (int x = 0; x < width; x++){
-                if(((BufferedImage) img1).getRGB(x, y) != ((BufferedImage) img1).getRGB(x, y)) flag = false;
-            }
-        }
-        return flag;
     }
 
     private Image convertToBinary(Image img) {
