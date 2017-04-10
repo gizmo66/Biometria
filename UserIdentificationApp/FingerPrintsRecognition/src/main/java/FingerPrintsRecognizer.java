@@ -28,8 +28,8 @@ public class FingerPrintsRecognizer implements Recognizer {
     private static final String ERROR_OPENING_IMAGE_MSG = "Error opening image: ";
     private static final String INFO_LOADING_IMAGE_MSG = "Loading image from path:\n {}";
     private static final double SCALE = 0.5;
-    private static final int WINDOW_POS_X = 20;
-    private static final int WINDOW_POS_Y = 20;
+    private static final int WINDOW_POS_X = 100;
+    private static final int WINDOW_POS_Y = 100;
 
     @Override
     public boolean recognize(String username) {
@@ -60,11 +60,11 @@ public class FingerPrintsRecognizer implements Recognizer {
         Image binaryImage = convertToBinary(blackAndWhiteImage);
         displayImage(binaryImage, ++displayIteration, "Black and white image");
 
-        Image imageFromLines = skeletonization.skeletonize(binaryImage);
-        displayImage(binaryImage, ++displayIteration, "Lines extracted");
+        Image imageFromLines = Skeletonization.skeletonize(binaryImage);
+        displayImage(imageFromLines, ++displayIteration, "Lines extracted");
 
-        extractCharacteristic(imageFromLines);
-        displayImage(imageFromLines, ++displayIteration, "Extracted characteristics");
+        Image imageWithCharacteristics = extractCharacteristic(imageFromLines);
+        displayImage(imageWithCharacteristics, ++displayIteration, "Extracted characteristics");
 
         return compareToStoredFingerprint();
     }
@@ -144,7 +144,7 @@ public class FingerPrintsRecognizer implements Recognizer {
         return toBufferedImage(resizedImage);
     }
 
-    private Image toBufferedImage(Mat m) {
+    public static Image toBufferedImage(Mat m) {
         int type = BufferedImage.TYPE_BYTE_GRAY;
         if (m.channels() > 1) {
             type = BufferedImage.TYPE_3BYTE_BGR;
