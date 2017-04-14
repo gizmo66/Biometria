@@ -80,6 +80,7 @@ public class FingerPrintsRecognizer implements Recognizer {
     private Image convertToBinary(Image img) {
         Mat src = bufferedImageToMat((BufferedImage) img);
         Image result = toBufferedImage(src);
+
         int height = ((BufferedImage) result).getHeight();
         int width = ((BufferedImage) result).getWidth();
         for (int y = 0; y < height; y++) {
@@ -165,7 +166,7 @@ public class FingerPrintsRecognizer implements Recognizer {
         return mat;
     }
 
-    private void displayImage(Image img, int iteration, String windowName) {
+    public static void displayImage(Image img, int iteration, String windowName) {
         ImageIcon icon = new ImageIcon(img);
         int x = WINDOW_POS_X + 380 * iteration;
         int y = WINDOW_POS_Y;
