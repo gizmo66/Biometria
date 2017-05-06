@@ -37,7 +37,7 @@ public class Skeletonization {
     static private boolean compareToMask(Image img, int maskNr, int x, int y){
         for (int i=0; i < 3; i++){
             for (int j=0; j < 3; j++) {
-                if (i != 1 && j != 1) {//nie sprawdzam środka maski
+                if (i != 1 /*&& j != 1*/) {//nie sprawdzam środka maski
                     if (elements[maskNr][i * 3 + j] == 1 && ((BufferedImage) img).getRGB(x - 1 + j, y - 1 + i) == Color.BLACK.getRGB())
                     return false;
                     else if (elements[maskNr][i * 3 + j] == 0 && ((BufferedImage) img).getRGB(x - 1 + j, y - 1 + i) == Color.WHITE.getRGB())
@@ -80,9 +80,15 @@ public class Skeletonization {
 
             //do previousImg image przypisuję za każdym razem thinnedImage z poprzedniego przejścia
 
-            for (int maskNr = 0; maskNr < 8; maskNr++) {
-                thin(thinnedImg, maskNr);
-            }
+            thin(thinnedImg, 0);
+            thin(thinnedImg, 4);
+            thin(thinnedImg, 1);
+            thin(thinnedImg, 2);
+            thin(thinnedImg, 3);
+            thin(thinnedImg, 4);
+            thin(thinnedImg, 5);
+            thin(thinnedImg, 6);
+            thin(thinnedImg, 7);
         }
         while(!compareImages(thinnedImg, previousImg));
 
