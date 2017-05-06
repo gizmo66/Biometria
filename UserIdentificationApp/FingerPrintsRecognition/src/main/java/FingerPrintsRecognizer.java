@@ -60,7 +60,7 @@ public class FingerPrintsRecognizer implements Recognizer {
         displayImage(blackAndWhiteImage, ++displayIteration, "Greyscale image");
 
         Image binaryImage = convertToBinary(blackAndWhiteImage);
-        displayImage(binaryImage, ++displayIteration, "Black and white image");
+        displayImage(upscaleImage((BufferedImage)binaryImage), ++displayIteration, "Black and white image");
 
         Image imageFromLines = Skeletonization.skeletonize(binaryImage);
         displayImage(upscaleImage((BufferedImage)imageFromLines), ++displayIteration, "Lines extracted");
@@ -106,9 +106,8 @@ public class FingerPrintsRecognizer implements Recognizer {
                 Color bwPixel;
                 //porównuję tylko wartość niebieskiego, bo zakładam, że fukcja operuje na obrazku w skali szarości
                 //w związku z tym wartości czeronego i zielonego będą takie same
-                if (pixel.getBlue() < 170) bwPixel = new Color(0, 0, 0);
+                if (pixel.getBlue() < 190) bwPixel = new Color(0, 0, 0);
                 else bwPixel = new Color(255, 255, 255);
-
 
                 ((BufferedImage) result).setRGB(x, y, bwPixel.getRGB());
             }
