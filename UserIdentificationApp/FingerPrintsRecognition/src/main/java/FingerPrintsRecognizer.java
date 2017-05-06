@@ -8,6 +8,8 @@ import org.opencv.imgproc.Imgproc;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.geom.AffineTransform;
+import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
 import java.awt.Color;
@@ -57,7 +59,7 @@ public class FingerPrintsRecognizer implements Recognizer {
         Image blackAndWhiteImage = convertToBlackAndWhite(img);
         displayImage(blackAndWhiteImage, ++displayIteration, "Greyscale image");
 
-        Image binaryImage = convertToBinary(blackAndWhiteImage);
+        Image binaryImage = convertToBinary(upscaleImage((BufferedImage)blackAndWhiteImage));
         displayImage(binaryImage, ++displayIteration, "Black and white image");
 
         Image imageFromLines = Skeletonization.skeletonize(binaryImage);
@@ -67,6 +69,18 @@ public class FingerPrintsRecognizer implements Recognizer {
         displayImage(imageWithCharacteristics, ++displayIteration, "Extracted characteristics");
 
         return compareToStoredFingerprint();
+    }
+
+    private BufferedImage upscaleImage(BufferedImage img){
+        int w = img.getWidth(null);
+        int h = img.getHeight(null);
+        BufferedImage upscaledImg = new BufferedImage(w*2, h*2, BufferedImage.TYPE_3BYTE_BGR);
+        AffineTransform at = new AffineTransform();
+        at.scale(2.0, 2.0);
+        AffineTransformOp scaleOp =
+                new AffineTransformOp(at, AffineTransformOp.TYPE_BILINEAR);
+        upscaledImg = scaleOp.filter(img, upscaledImg);
+        return upscaledImg;
     }
 
     private boolean compareToStoredFingerprint() {

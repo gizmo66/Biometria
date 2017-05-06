@@ -39,14 +39,13 @@ public class Skeletonization {
             for (int j=0; j < 3; j++) {
                 if (i != 1 && j != 1) {//nie sprawdzam środka maski
                     if (elements[maskNr][i * 3 + j] == 1 && ((BufferedImage) img).getRGB(x - 1 + j, y - 1 + i) == Color.BLACK.getRGB())
-                    {System.out.println("maska nie pasuje"); return false;}
+                    return false;
                     else if (elements[maskNr][i * 3 + j] == 0 && ((BufferedImage) img).getRGB(x - 1 + j, y - 1 + i) == Color.WHITE.getRGB())
-                    {System.out.println("maska nie pasuje"); return false;}
+                    return false;
 
                 }
             }
         }
-        System.out.println("maska pasuje");
         return true;
     }
 
@@ -72,13 +71,9 @@ public class Skeletonization {
     static public Image skeletonize(Image bwImg) {
 
         Mat src = FingerPrintsRecognizer.bufferedImageToMat((BufferedImage) bwImg);
-        Image previousImg;
-
         Image thinnedImg = FingerPrintsRecognizer.toBufferedImage(src);
-        Image thinnedImg2 = FingerPrintsRecognizer.toBufferedImage(src);
 
-        FingerPrintsRecognizer.displayImage(thinnedImg2, 5, "thinndsfed");
-
+        Image previousImg;
         do{
             Mat src1 = FingerPrintsRecognizer.bufferedImageToMat((BufferedImage) thinnedImg);
             previousImg = FingerPrintsRecognizer.toBufferedImage(src1);
