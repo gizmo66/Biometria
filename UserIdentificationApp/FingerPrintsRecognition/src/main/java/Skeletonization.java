@@ -85,7 +85,6 @@ public class Skeletonization {
             thin(thinnedImg, 1);
             thin(thinnedImg, 2);
             thin(thinnedImg, 3);
-            thin(thinnedImg, 4);
             thin(thinnedImg, 5);
             thin(thinnedImg, 6);
             thin(thinnedImg, 7);
