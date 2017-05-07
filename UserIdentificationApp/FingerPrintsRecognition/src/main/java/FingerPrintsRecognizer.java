@@ -31,7 +31,7 @@ public class FingerPrintsRecognizer implements Recognizer {
     private static final String INFO_LOADING_IMAGE_MSG = "Loading image from path:\n {}";
     private static final double SCALE = 0.5;
     private static final int WINDOW_POS_X = 100;
-    private static final int WINDOW_POS_Y = 100;
+    private static final int WINDOW_POS_Y = 20;
 
     @Override
     public boolean recognize(String username) {
@@ -54,29 +54,32 @@ public class FingerPrintsRecognizer implements Recognizer {
 
     private boolean identifyUser(Image img) {
         int displayIteration = 0;
-        displayImage(img, displayIteration, "Input image");
+        displayImage(upscaleImage((BufferedImage)img, 1.5), displayIteration, "Input image");
 
         Image blackAndWhiteImage = convertToBlackAndWhite(img);
-        displayImage(blackAndWhiteImage, ++displayIteration, "Greyscale image");
+        displayImage(upscaleImage((BufferedImage)blackAndWhiteImage, 1.5), ++displayIteration, "Greyscale image");
 
         Image binaryImage = convertToBinary(blackAndWhiteImage);
-        displayImage(upscaleImage((BufferedImage)binaryImage), ++displayIteration, "Black and white image");
+        displayImage(upscaleImage((BufferedImage)binaryImage, 1.5), ++displayIteration, "Black and white image");
 
         Image imageFromLines = Skeletonization.skeletonize(binaryImage);
-        displayImage(upscaleImage((BufferedImage)imageFromLines), ++displayIteration, "Lines extracted");
+        displayImage(upscaleImage((BufferedImage)imageFromLines, 2), ++displayIteration, "Lines extracted");
 
-        Image imageWithCharacteristics = extractCharacteristic(upscaleImage((BufferedImage)imageFromLines));
+        Image imageFromJoinedLines = Skeletonization.joinLines(imageFromLines);
+        displayImage(upscaleImage((BufferedImage)imageFromJoinedLines, 2), ++displayIteration, "Lines joined");
+
+        Image imageWithCharacteristics = extractCharacteristic(upscaleImage((BufferedImage)imageFromJoinedLines, 2));
         displayImage(imageWithCharacteristics, ++displayIteration, "Extracted characteristics");
 
         return compareToStoredFingerprint();
     }
 
-    private BufferedImage upscaleImage(BufferedImage img){
+    private BufferedImage upscaleImage(BufferedImage img, double scale){
         int w = img.getWidth(null);
         int h = img.getHeight(null);
-        BufferedImage upscaledImg = new BufferedImage(w*2, h*2, BufferedImage.TYPE_3BYTE_BGR);
+        BufferedImage upscaledImg = new BufferedImage((int)(w*scale), (int)(h*scale), BufferedImage.TYPE_3BYTE_BGR);
         AffineTransform at = new AffineTransform();
-        at.scale(2.0, 2.0);
+        at.scale(scale, scale);
         AffineTransformOp scaleOp =
                 new AffineTransformOp(at, AffineTransformOp.TYPE_BILINEAR);
         upscaledImg = scaleOp.filter(img, upscaledImg);
@@ -186,7 +189,7 @@ public class FingerPrintsRecognizer implements Recognizer {
 
         if(iteration > 2) {
             x = WINDOW_POS_X + 380 * (iteration - 3);
-            y = WINDOW_POS_Y + 240;
+            y = WINDOW_POS_Y + 320;
         }
 
         FingerPrintRecognitionDialog dialog = new FingerPrintRecognitionDialog(icon, x, y, windowName);

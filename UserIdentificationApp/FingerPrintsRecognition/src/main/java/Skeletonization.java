@@ -5,7 +5,7 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 
 /**
- * Created by michc on 04.04.2017.
+ * @author Michał on 04.04.2017.
  */
 @Slf4j
 public class Skeletonization {
@@ -21,18 +21,6 @@ public class Skeletonization {
 
     private static int[][] elements =
             {element1,element2,element3,element4,element5,element6,element7,element8};
-
-    static private boolean compareImages(Image img1, Image img2){
-        int height = ((BufferedImage) img1).getHeight();
-        int width = ((BufferedImage) img1).getWidth();
-
-        for(int y = 0; y < height; y++){
-            for (int x = 0; x < width; x++){
-                if(((BufferedImage) img1).getRGB(x, y) != ((BufferedImage) img2).getRGB(x, y)) return false;
-            }
-        }
-        return true;
-    }
 
     static private boolean compareToMask(Image img, int maskNr, int x, int y){
         for (int i=0; i < 3; i++){
@@ -67,30 +55,44 @@ public class Skeletonization {
         }
     }
 
-
     static public Image skeletonize(Image bwImg) {
 
         Mat src = FingerPrintsRecognizer.bufferedImageToMat((BufferedImage) bwImg);
         Image thinnedImg = FingerPrintsRecognizer.toBufferedImage(src);
 
-        Image previousImg;
+        int i = 0;
         do{
-            Mat src1 = FingerPrintsRecognizer.bufferedImageToMat((BufferedImage) thinnedImg);
-            previousImg = FingerPrintsRecognizer.toBufferedImage(src1);
-
-            //do previousImg image przypisuję za każdym razem thinnedImage z poprzedniego przejścia
-
             thin(thinnedImg, 0);
-            thin(thinnedImg, 4);
             thin(thinnedImg, 1);
             thin(thinnedImg, 2);
             thin(thinnedImg, 3);
+            thin(thinnedImg, 4);
             thin(thinnedImg, 5);
             thin(thinnedImg, 6);
             thin(thinnedImg, 7);
+            i++;
         }
-        while(!compareImages(thinnedImg, previousImg));
-
+        while(i < 10);
         return thinnedImg;
+    }
+
+    public static Image joinLines(Image srcImage) {
+        int width = ((BufferedImage)srcImage).getWidth();
+        int height = ((BufferedImage)srcImage).getHeight();
+
+        Color[][] pixels = new Color[width][height];
+
+        for(int w = 0; w < width; w++) {
+            for(int h = 0; h < height; h++) {
+                pixels[w][h] = new Color(((BufferedImage) srcImage).getRGB(w, h));
+            }
+        }
+
+        joinLines((BufferedImage) srcImage, width, height, pixels);
+        return srcImage;
+    }
+
+    private static void joinLines(BufferedImage srcImage, int width, int height, Color[][] pixels) {
+        //TODO akolodziejek
     }
 }
