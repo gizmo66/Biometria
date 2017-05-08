@@ -25,7 +25,7 @@ public class Skeletonization {
     static private boolean compareToMask(Image img, int maskNr, int x, int y){
         for (int i=0; i < 3; i++){
             for (int j=0; j < 3; j++) {
-                if (i != 1 /*&& j != 1*/) {//nie sprawdzam środka maski
+                if (i != 1 || j != 1) {//nie sprawdzam środka maski
                     if (elements[maskNr][i * 3 + j] == 1 && ((BufferedImage) img).getRGB(x - 1 + j, y - 1 + i) == Color.BLACK.getRGB())
                     return false;
                     else if (elements[maskNr][i * 3 + j] == 0 && ((BufferedImage) img).getRGB(x - 1 + j, y - 1 + i) == Color.WHITE.getRGB())

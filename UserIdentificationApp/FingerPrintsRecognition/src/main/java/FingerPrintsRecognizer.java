@@ -25,7 +25,6 @@ public class FingerPrintsRecognizer implements Recognizer {
     private static final String WELCOME_MESSAGE = "Welcome to OpenCV ver. {} ";
     private static final String LIB_NAME = "opencv_java320";
 
-    private static final String FILE_NAME1 = "fingerprint_002.jpg";
     private static final String FILE_NAME = "1_1.png";
     private static final String ERROR_OPENING_IMAGE_MSG = "Error opening image: ";
     private static final String INFO_LOADING_IMAGE_MSG = "Loading image from path:\n {}";
@@ -56,7 +55,7 @@ public class FingerPrintsRecognizer implements Recognizer {
         int displayIteration = 0;
         displayImage(upscaleImage((BufferedImage)img, 1.5), displayIteration, "Input image");
 
-        Image blackAndWhiteImage = convertToBlackAndWhite(img);
+        Image blackAndWhiteImage = convertToBlackAndWhite(img, 0.9f);
         displayImage(upscaleImage((BufferedImage)blackAndWhiteImage, 1.5), ++displayIteration, "Greyscale image");
 
         Image binaryImage = convertToBinary(blackAndWhiteImage);
@@ -65,10 +64,7 @@ public class FingerPrintsRecognizer implements Recognizer {
         Image imageFromLines = Skeletonization.skeletonize(binaryImage);
         displayImage(upscaleImage((BufferedImage)imageFromLines, 2), ++displayIteration, "Lines extracted");
 
-        Image imageFromJoinedLines = Skeletonization.joinLines(imageFromLines);
-        displayImage(upscaleImage((BufferedImage)imageFromJoinedLines, 2), ++displayIteration, "Lines joined");
-
-        Image imageWithCharacteristics = extractCharacteristic(upscaleImage((BufferedImage)imageFromJoinedLines, 2));
+        Image imageWithCharacteristics = extractCharacteristic(upscaleImage((BufferedImage)imageFromLines, 2));
         displayImage(imageWithCharacteristics, ++displayIteration, "Extracted characteristics");
 
         return compareToStoredFingerprint();
@@ -109,7 +105,7 @@ public class FingerPrintsRecognizer implements Recognizer {
                 Color bwPixel;
                 //porównuję tylko wartość niebieskiego, bo zakładam, że fukcja operuje na obrazku w skali szarości
                 //w związku z tym wartości czeronego i zielonego będą takie same
-                if (pixel.getBlue() < 190) bwPixel = new Color(0, 0, 0);
+                if (pixel.getBlue() < 155) bwPixel = new Color(0, 0, 0);
                 else bwPixel = new Color(255, 255, 255);
 
                 ((BufferedImage) result).setRGB(x, y, bwPixel.getRGB());
@@ -127,7 +123,7 @@ public class FingerPrintsRecognizer implements Recognizer {
      * 2. Znajdź średnią RGB np.: Avg = (R+G+B)/3
      * 3. Zamień wartości R, G i B piksela wartością średnią (Avg) obliczoną w punkcie 2.
      */
-    private Image convertToBlackAndWhite(Image image) {
+    private Image convertToBlackAndWhite(Image image, float contrastFactor) {
         Mat src = bufferedImageToMat((BufferedImage) image);
         Image result = toBufferedImage(src);
         int height = ((BufferedImage) result).getHeight();
@@ -136,7 +132,9 @@ public class FingerPrintsRecognizer implements Recognizer {
             for (int w = 0; w < width; w++) {
                 Color pixel = new Color(((BufferedImage) result).getRGB(w, h));
                 int average = (pixel.getRed() + pixel.getGreen() + pixel.getBlue()) / 3;
-                Color greyScalePixel = new Color(average, average, average);
+                average = (int) (contrastFactor * (average - 128) + 128);
+                average = Math.abs(average);
+                Color greyScalePixel = new Color(average >= 255 ? 255 : average, average >= 255 ? 255 : average, average >= 255 ? 255 : average);
                 ((BufferedImage) result).setRGB(w, h, greyScalePixel.getRGB());
             }
         }
