@@ -76,7 +76,7 @@ public class CreateUserFrame extends JFrame implements ActionListener {
     @Override
     public void actionPerformed(ActionEvent e) {
         if (fc == null) {
-            fc = new JFileChooser();
+            fc = new JFileChooser("..\\UserIdentificationApp\\FingerPrintsRecognition\\src\\main\\resources");
 
             fc.setAcceptAllFileFilterUsed(false);
             fc.setAccessory(new ImagePreview(fc));
