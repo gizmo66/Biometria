@@ -1,5 +1,8 @@
+package api;
+
 import database.finder.UserFinder;
 import org.apache.commons.collections4.CollectionUtils;
+import view.frame.LoginFrame;
 
 /**
  * @author Adam

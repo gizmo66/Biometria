@@ -1,6 +1,8 @@
-import api.FingerPrintsRecognizer;
+package view.frame;
+
+import api.recognition.FingerPrintsRecognizer;
 import api.user.UserServiceImpl;
-import fileChooser.ImagePreview;
+import view.fileChooser.ImagePreview;
 
 import javax.swing.*;
 import java.awt.*;

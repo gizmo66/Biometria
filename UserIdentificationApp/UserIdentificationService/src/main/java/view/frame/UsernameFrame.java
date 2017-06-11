@@ -1,4 +1,7 @@
-import api.FingerPrintsRecognizer;
+package view.frame;
+
+import api.recognition.FingerPrintsRecognizer;
+import api.recognition.VoiceRecognizer;
 
 import javax.swing.*;
 import java.awt.*;
@@ -36,7 +39,6 @@ public class UsernameFrame extends CreateUserFrame implements ActionListener {
         btnLogin = new JButton("Login");
 
         btnLogin.addActionListener(e -> {
-            dispose();
             boolean userIdentifiedSuccessfully = false;
             FingerPrintsRecognizer fingerPrintsRecognizer = new FingerPrintsRecognizer();
 
@@ -57,6 +59,7 @@ public class UsernameFrame extends CreateUserFrame implements ActionListener {
             } else {
                 JOptionPane.showMessageDialog(UsernameFrame.this, "Identification failed!", "Login", JOptionPane.ERROR_MESSAGE);
             }
+            dispose();
         });
         btnCancel = new JButton("Cancel");
         btnCancel.addActionListener(e -> dispose());

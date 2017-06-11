@@ -1,4 +1,4 @@
-package fileChooser;
+package view.fileChooser;
 
 import javax.swing.*;
 import java.beans.*;
