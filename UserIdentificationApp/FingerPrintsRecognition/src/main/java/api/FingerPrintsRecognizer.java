@@ -100,14 +100,14 @@ public class FingerPrintsRecognizer implements Recognizer {
     }
 
     private boolean compareMinutiaeSets(MinutiaeSet minutiaeSet, MinutiaeSet minutiaeSet1) {
-        //TODO
+        //TODO: porównać oba zbiory minucji ilościowo i jakościowo
         return true;
     }
 
     public static MinutiaeSet extractMinutiaeSetFromImage(Image imageFromLines) {
         MinutiaeSet minutiaeSet = new MinutiaeSet();
 
-        //TODO TEST
+        //TODO: tylko do testów - do usunięcia po napisaniu logiki
         Minutiae minutiae1 = new Minutiae();
         minutiae1.setValue("test1");
 
@@ -116,7 +116,7 @@ public class FingerPrintsRecognizer implements Recognizer {
 
         minutiaeSet.getMinutiaeList().add(minutiae1);
         minutiaeSet.getMinutiaeList().add(minutiae2);
-        //TODO
+        //TODO: wyciąganie cech z użyciem Crossing Number
 
         return minutiaeSet;
     }

@@ -3,6 +3,7 @@ import api.FingerPrintsRecognizer;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionListener;
+import java.io.File;
 
 public class UsernameFrame extends CreateUserFrame implements ActionListener {
 
@@ -11,7 +12,7 @@ public class UsernameFrame extends CreateUserFrame implements ActionListener {
     private JButton btnLogin;
     private JButton btnCancel;
 
-    public UsernameFrame(int width, int height) {
+    public UsernameFrame() {
         setTitle("Login");
         setLocation(560, 340);
 
@@ -36,19 +37,23 @@ public class UsernameFrame extends CreateUserFrame implements ActionListener {
 
         btnLogin.addActionListener(e -> {
             dispose();
+            boolean userIdentifiedSuccessfully = false;
             FingerPrintsRecognizer fingerPrintsRecognizer = new FingerPrintsRecognizer();
-            boolean fingerPrintsMatched = false;
-            if(fingerPrintImage != null && fingerPrintsRecognizer.recognize(getUsername(), fingerPrintImage)) {
-                fingerPrintsMatched = true;
+
+            //TODO: do zmiany na plik dźwiękowy wczytany z dysku
+            File voiceRecordingFile = null;
+
+            if(fingerPrintImage != null) {
+                if(fingerPrintsRecognizer.recognize(getUsername(), fingerPrintImage)) {
+                    VoiceRecognizer voiceRecognizer = new VoiceRecognizer();
+                    if(voiceRecognizer.recognize(getUsername(), voiceRecordingFile)) {
+                        userIdentifiedSuccessfully = true;
+                    }
+                }
             }
 
-            if (fingerPrintsMatched) {
-                VoiceRecognizer voiceRecognizer = new VoiceRecognizer();
-                if (voiceRecognizer.recognize(getUsername(), null)) {
-                    JOptionPane.showMessageDialog(UsernameFrame.this, "Hi " + getUsername() + "! You have successfully logged in.", "Login", JOptionPane.INFORMATION_MESSAGE);
-                } else {
-                    JOptionPane.showMessageDialog(UsernameFrame.this, "Identification failed!", "Login", JOptionPane.ERROR_MESSAGE);
-                }
+            if(userIdentifiedSuccessfully) {
+                JOptionPane.showMessageDialog(UsernameFrame.this, "Hi " + getUsername() + "! You have successfully logged in.", "Login", JOptionPane.INFORMATION_MESSAGE);
             } else {
                 JOptionPane.showMessageDialog(UsernameFrame.this, "Identification failed!", "Login", JOptionPane.ERROR_MESSAGE);
             }

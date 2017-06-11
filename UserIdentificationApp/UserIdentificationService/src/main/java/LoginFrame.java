@@ -27,7 +27,7 @@ public class LoginFrame extends JFrame {
             final JButton btnLogin = new JButton("Login");
             btnLogin.addActionListener(
                     e -> {
-                        UsernameFrame loginDlg = new UsernameFrame(width, height);
+                        UsernameFrame loginDlg = new UsernameFrame();
                         loginDlg.setVisible(true);
                         dispose();
                     });

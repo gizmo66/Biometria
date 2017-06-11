@@ -54,7 +54,7 @@ public class CreateUserFrame extends JFrame implements ActionListener {
                 fingerPrintsRecognizer.saveUserFingerPrintInfo(userId, fingerPrintImage);
             }
 
-            UsernameFrame loginDlg = new UsernameFrame(width, height);
+            UsernameFrame loginDlg = new UsernameFrame();
             loginDlg.setVisible(true);
             dispose();
         });
