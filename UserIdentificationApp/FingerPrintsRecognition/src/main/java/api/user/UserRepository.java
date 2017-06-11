@@ -1,4 +1,4 @@
-package api;
+package api.user;
 
 import database.DatabaseHelper;
 import database.mapper.IntResultSetMapper;

@@ -1,4 +1,4 @@
-package api;
+package api.minutiae;
 
 import database.DatabaseHelper;
 import database.mapper.IntResultSetMapper;

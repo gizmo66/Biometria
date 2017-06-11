@@ -1,28 +1,30 @@
-package api;
+package api.minutiae;
 
 import database.DatabaseHelper;
 import database.mapper.IntResultSetMapper;
+import database.model.Minutiae;
 
 /**
  * @author Adam
  */
-public class MinutiaeToMinutiaeSetRepository {
+public class MinutiaeRepository {
 
     private DatabaseHelper databaseHelper;
 
-    public MinutiaeToMinutiaeSetRepository() {
+    public MinutiaeRepository() {
         databaseHelper = new DatabaseHelper();
     }
 
-    public void create(Integer minutiaeId, int minutiaeSetId) {
-        int id = generateId();
+    public Integer createNewMinutiae(Minutiae minutiae, int minutiaeSetId) {
+        int minutiaeId = generateId();
 
         StringBuilder sql = new StringBuilder();
 
-        sql.append("INSERT INTO MINUTIAE_TO_MINUTIAE_SET VALUES (");
-        sql.append(id).append(", ").append(minutiaeId).append(", ").append(minutiaeSetId).append(") ");
+        sql.append("INSERT INTO MINUTIAE VALUES (");
+        sql.append(minutiaeId).append(", ").append(minutiaeSetId).append(", '").append(minutiae.getValue()).append("') ");
 
         databaseHelper.executeUpdate(sql.toString());
+        return minutiaeId;
     }
 
     private int generateId() {
@@ -33,7 +35,7 @@ public class MinutiaeToMinutiaeSetRepository {
         StringBuilder sql = new StringBuilder();
 
         sql.append("SELECT max(id) ");
-        sql.append("FROM MINUTIAE_TO_MINUTIAE_SET ");
+        sql.append("FROM MINUTIAE ");
 
         int lastId = IntResultSetMapper.extract(databaseHelper.executeQuery(sql.toString()), databaseHelper.getConnection());
         return ++lastId;
@@ -41,7 +43,7 @@ public class MinutiaeToMinutiaeSetRepository {
 
     private boolean tableIsEmpty() {
         StringBuilder sql = new StringBuilder();
-        sql.append("select count(1) from MINUTIAE_TO_MINUTIAE_SET ");
+        sql.append("select count(1) from MINUTIAE ");
 
         int count = IntResultSetMapper.extract(databaseHelper.executeQuery(sql.toString()), databaseHelper.getConnection());
         return count == 0;

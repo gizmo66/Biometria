@@ -1,5 +1,7 @@
-package api;
+package api.user;
 
+import api.FingerPrintsRecognizer;
+import api.minutiae.MinutiaeSetRepository;
 import database.model.MinutiaeSet;
 import database.model.User;
 
