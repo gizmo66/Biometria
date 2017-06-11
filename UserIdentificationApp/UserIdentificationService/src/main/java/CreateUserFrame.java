@@ -60,7 +60,7 @@ public class CreateUserFrame extends JFrame implements ActionListener {
         log.setEditable(false);
         JScrollPane logScrollPane = new JScrollPane(log);
 
-        JButton sendButton = new JButton("Attach...");
+        JButton sendButton = new JButton("Choose finger print image:");
         sendButton.addActionListener(this);
 
         panel.add(sendButton);
@@ -83,7 +83,7 @@ public class CreateUserFrame extends JFrame implements ActionListener {
         }
 
         int returnVal = fc.showDialog(this,
-                                      "Attach");
+                                      "Choose finger print image:");
 
         if (returnVal == JFileChooser.APPROVE_OPTION) {
             File file = fc.getSelectedFile();
