@@ -1,5 +1,6 @@
 package api;
 
+import api.user.UserIdentifiedByFingerprintService;
 import database.finder.MinutiaeSetFinder;
 import database.finder.UserFinder;
 import database.model.Minutiae;
@@ -29,18 +30,17 @@ public class FingerPrintsRecognizer implements Recognizer {
     private static final String WELCOME_MESSAGE = "Welcome to OpenCV ver. {} ";
     private static final String LIB_NAME = "opencv_java320";
 
-    private static final String ERROR_OPENING_IMAGE_MSG = "Error opening image: ";
-    private static final String INFO_LOADING_IMAGE_MSG = "Loading image from path:\n {}";
-    private static final double SCALE = 0.5;
     private static final int WINDOW_POS_X = 100;
     private static final int WINDOW_POS_Y = 20;
 
     private UserFinder userFinder;
     private MinutiaeSetFinder minutiaeSetFinder;
+    private UserIdentifiedByFingerprintService userIdentifiedByFingerPrintService;
 
     public FingerPrintsRecognizer() {
         userFinder = new UserFinder();
         minutiaeSetFinder = new MinutiaeSetFinder();
+        userIdentifiedByFingerPrintService = new UserIdentifiedByFingerprintService();
     }
 
     @Override
@@ -213,5 +213,11 @@ public class FingerPrintsRecognizer implements Recognizer {
 
         FingerPrintRecognitionDialog dialog = new FingerPrintRecognitionDialog(icon, x, y, windowName);
         dialog.setVisible(true);
+    }
+
+    public void saveUserFingerPrintInfo(Integer userId, File fingerPrintImage) {
+        MinutiaeSet minutiaeSet = FingerPrintsRecognizer.extractMinutiaeSetFromImage(fingerPrintImage);
+        minutiaeSet.setUserId(userId);
+        userIdentifiedByFingerPrintService.setMinutiaeSet(userId, minutiaeSet);
     }
 }

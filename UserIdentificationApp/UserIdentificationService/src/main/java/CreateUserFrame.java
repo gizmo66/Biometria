@@ -1,3 +1,4 @@
+import api.FingerPrintsRecognizer;
 import api.user.UserServiceImpl;
 import fileChooser.ImagePreview;
 
@@ -46,7 +47,10 @@ public class CreateUserFrame extends JFrame implements ActionListener {
 
         btnCreate.addActionListener(e -> {
             UserServiceImpl userService = new UserServiceImpl();
-            userService.createUser(tfUsername.getText(), fingerPrintImage);
+            Integer userId = userService.createUser(tfUsername.getText());
+
+            FingerPrintsRecognizer fingerPrintsRecognizer = new FingerPrintsRecognizer();
+            fingerPrintsRecognizer.saveUserFingerPrintInfo(userId, fingerPrintImage);
 
             UsernameFrame loginDlg = new UsernameFrame(width, height);
             loginDlg.setVisible(true);
