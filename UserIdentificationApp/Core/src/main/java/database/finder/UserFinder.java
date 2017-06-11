@@ -1,6 +1,5 @@
 package database.finder;
 
-import database.DatabaseHelper;
 import database.mapper.UserResultSetMapper;
 import database.model.User;
 
@@ -9,12 +8,10 @@ import java.util.List;
 /**
  * @author Adam
  */
-public class UserFinder {
-
-    private DatabaseHelper databaseHelper;
+public class UserFinder extends AbstractFinder {
 
     public UserFinder() {
-        databaseHelper = new DatabaseHelper();
+        super();
     }
 
     public List<User> findAll() {

@@ -12,7 +12,7 @@ import lombok.ToString;
 @Setter
 @EqualsAndHashCode
 @ToString
-public class Minutiae {
+public class Minutiae extends Entity {
 
     String value;
 }

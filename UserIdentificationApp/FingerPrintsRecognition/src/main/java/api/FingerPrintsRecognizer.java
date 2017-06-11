@@ -76,7 +76,7 @@ public class FingerPrintsRecognizer implements Recognizer {
         displayImage(upscaleImage((BufferedImage)binaryImage, 1.5), ++displayIteration, "Black and white image");
 
         Image imageFromLines = Skeletonization.skeletonize(binaryImage);
-        displayImage(upscaleImage((BufferedImage)imageFromLines, 2), ++displayIteration, "Lines extracted");
+        displayImage(upscaleImage((BufferedImage)imageFromLines, 1), ++displayIteration, "Lines extracted");
 
         return compareToStoredFingerprint(imageFromLines, userName);
     }
