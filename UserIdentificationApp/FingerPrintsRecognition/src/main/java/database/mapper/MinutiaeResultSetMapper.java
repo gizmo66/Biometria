@@ -13,7 +13,7 @@ import java.util.List;
  * @author Adam
  */
 @Slf4j
-public class MinutiaeResultSetMapper {
+public class MinutiaeResultSetMapper extends AbstractResultSetMapper {
 
     public static List<Minutiae> extract(ResultSet resultSet, Connection connection) {
         List<Minutiae> minutiaeList = new ArrayList<>();
@@ -29,17 +29,7 @@ public class MinutiaeResultSetMapper {
             } catch (SQLException e) {
                 log.error(e.toString());
             } finally {
-                try
-                {
-                    if(connection != null){
-                        connection.close();
-                    }
-                }
-                catch(SQLException e)
-                {
-                    // connection close failed.
-                    log.error(e.toString());
-                }
+                closeConnection(connection);
             }
         }
         return null;

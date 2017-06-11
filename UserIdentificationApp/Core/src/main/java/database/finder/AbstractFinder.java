@@ -5,11 +5,11 @@ import database.DatabaseHelper;
 /**
  * @author Adam
  */
-public abstract class AbstractFinder {
+abstract class AbstractFinder {
 
-    protected DatabaseHelper databaseHelper;
+    DatabaseHelper databaseHelper;
 
-    public AbstractFinder() {
+    AbstractFinder() {
         databaseHelper = new DatabaseHelper();
     }
 }

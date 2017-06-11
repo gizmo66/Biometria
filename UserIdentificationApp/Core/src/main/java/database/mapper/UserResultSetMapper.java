@@ -13,7 +13,7 @@ import java.util.List;
  * @author Adam
  */
 @Slf4j
-public class UserResultSetMapper {
+public class UserResultSetMapper extends AbstractResultSetMapper {
 
     public static User extractUnique(ResultSet resultSet, Connection connection) {
         if(resultSet != null) {
@@ -26,17 +26,7 @@ public class UserResultSetMapper {
             } catch (SQLException e) {
                 log.error(e.toString());
             } finally {
-                try
-                {
-                    if(connection != null){
-                        connection.close();
-                    }
-                }
-                catch(SQLException e)
-                {
-                    // connection close failed.
-                    log.error(e.toString());
-                }
+                closeConnection(connection);
             }
         }
         return null;
@@ -57,17 +47,7 @@ public class UserResultSetMapper {
             } catch (SQLException e) {
                 log.error(e.toString());
             } finally {
-                try
-                {
-                    if(connection != null){
-                        connection.close();
-                    }
-                }
-                catch(SQLException e)
-                {
-                    // connection close failed.
-                    log.error(e.toString());
-                }
+                closeConnection(connection);
             }
         }
         return users;

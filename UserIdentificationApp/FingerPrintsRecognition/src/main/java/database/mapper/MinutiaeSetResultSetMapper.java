@@ -11,7 +11,7 @@ import java.sql.SQLException;
  * @author Adam
  */
 @Slf4j
-public class MinutiaeSetResultSetMapper {
+public class MinutiaeSetResultSetMapper extends AbstractResultSetMapper {
 
     public static MinutiaeSet extract(ResultSet resultSet, Connection connection) {
         if(resultSet != null) {
@@ -23,17 +23,7 @@ public class MinutiaeSetResultSetMapper {
             } catch (SQLException e) {
                 log.error(e.toString());
             } finally {
-                try
-                {
-                    if(connection != null){
-                        connection.close();
-                    }
-                }
-                catch(SQLException e)
-                {
-                    // connection close failed.
-                    log.error(e.toString());
-                }
+                closeConnection(connection);
             }
         }
         return null;

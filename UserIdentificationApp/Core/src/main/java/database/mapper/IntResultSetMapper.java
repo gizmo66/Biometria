@@ -10,7 +10,7 @@ import java.sql.SQLException;
  * @author Adam
  */
 @Slf4j
-public class IntResultSetMapper {
+public class IntResultSetMapper extends AbstractResultSetMapper {
 
     public static int extract(ResultSet resultSet, Connection connection) {
         if(resultSet != null) {
@@ -19,17 +19,7 @@ public class IntResultSetMapper {
             } catch (SQLException e) {
                 log.error(e.toString());
             } finally {
-                try
-                {
-                    if(connection != null){
-                        connection.close();
-                    }
-                }
-                catch(SQLException e)
-                {
-                    // connection close failed.
-                    log.error(e.toString());
-                }
+                closeConnection(connection);
             }
         }
         return 0;
