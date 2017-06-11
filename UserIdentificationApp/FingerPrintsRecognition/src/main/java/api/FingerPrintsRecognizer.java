@@ -9,9 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
-import org.opencv.core.Size;
 import org.opencv.imgcodecs.Imgcodecs;
-import org.opencv.imgproc.Imgproc;
 
 import javax.swing.*;
 import java.awt.*;
@@ -31,7 +29,6 @@ public class FingerPrintsRecognizer implements Recognizer {
     private static final String WELCOME_MESSAGE = "Welcome to OpenCV ver. {} ";
     private static final String LIB_NAME = "opencv_java320";
 
-    private static final String FILE_NAME = "1_1.png";
     private static final String ERROR_OPENING_IMAGE_MSG = "Error opening image: ";
     private static final String INFO_LOADING_IMAGE_MSG = "Loading image from path:\n {}";
     private static final double SCALE = 0.5;
@@ -47,17 +44,14 @@ public class FingerPrintsRecognizer implements Recognizer {
     }
 
     @Override
-    public boolean recognize(String username) {
+    public boolean recognize(String username, File file) {
         System.loadLibrary(LIB_NAME);
         log.info(WELCOME_MESSAGE, Core.VERSION);
 
         Image img;
         try {
-            img = loadImage();
+            img = fileToImage(file);
             return identifyUser(img, username);
-        } catch (CannotLoadImageException e) {
-            log.error("Cannot load image", e);
-            return false;
         } catch (Exception e) {
             log.error("Unexpected exception while identifying user", e);
             return false;
@@ -67,6 +61,8 @@ public class FingerPrintsRecognizer implements Recognizer {
 
     private boolean identifyUser(Image img, String userName) {
         int displayIteration = 0;
+        img = upscaleImage((BufferedImage)img, 0.5);
+
         displayImage(upscaleImage((BufferedImage)img, 1.5), displayIteration, "Input image");
 
         Image blackAndWhiteImage = convertToBlackAndWhite(img, 0.9f);
@@ -76,7 +72,7 @@ public class FingerPrintsRecognizer implements Recognizer {
         displayImage(upscaleImage((BufferedImage)binaryImage, 1.5), ++displayIteration, "Black and white image");
 
         Image imageFromLines = Skeletonization.skeletonize(binaryImage);
-        displayImage(upscaleImage((BufferedImage)imageFromLines, 1), ++displayIteration, "Lines extracted");
+        displayImage(upscaleImage((BufferedImage)imageFromLines, 2), ++displayIteration, "Lines extracted");
 
         return compareToStoredFingerprint(imageFromLines, userName);
     }
@@ -174,24 +170,6 @@ public class FingerPrintsRecognizer implements Recognizer {
             }
         }
         return result;
-    }
-
-    private Image loadImage() throws CannotLoadImageException {
-        File file = new File(FILE_NAME);
-        String absolutePath = file.getAbsolutePath().replaceAll("\\\\", "/").replace(file.getName(), "") + "FingerPrintsRecognition/src/main/resources/" + file.getName();
-        absolutePath = absolutePath.replaceAll("//", "");
-
-        log.info(INFO_LOADING_IMAGE_MSG, absolutePath);
-        Mat src = Imgcodecs.imread(absolutePath);
-        if (src.empty()) {
-            throw new CannotLoadImageException(ERROR_OPENING_IMAGE_MSG);
-        }
-
-        Mat resizedImage = new Mat();
-        Size size = new Size(src.width() * SCALE, src.height() * SCALE);
-        Imgproc.resize(src, resizedImage, size);
-
-        return toBufferedImage(resizedImage);
     }
 
     private static Image fileToImage(File file) {

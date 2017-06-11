@@ -13,10 +13,13 @@ public class CreateUserFrame extends JFrame implements ActionListener {
     private JLabel lbUsername;
     private JButton btnCreate;
     private JButton btnCancel;
-    static private String newline = "\n";
-    private JTextArea log;
-    private JFileChooser fc;
-    private File fingerPrintImage;
+    private String newline = "\n";
+    protected JTextArea log;
+    protected JFileChooser fc;
+    protected File fingerPrintImage;
+
+    public CreateUserFrame() throws HeadlessException {
+    }
 
     public CreateUserFrame(int width, int height) {
         setTitle("Create user");

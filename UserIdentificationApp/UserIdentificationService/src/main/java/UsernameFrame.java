@@ -2,8 +2,9 @@ import api.FingerPrintsRecognizer;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionListener;
 
-public class UsernameFrame extends JFrame {
+public class UsernameFrame extends CreateUserFrame implements ActionListener {
 
     private JTextField tfUsername;
     private JLabel lbUsername;
@@ -36,10 +37,10 @@ public class UsernameFrame extends JFrame {
         btnLogin.addActionListener(e -> {
             dispose();
             FingerPrintsRecognizer fingerPrintsRecognizer = new FingerPrintsRecognizer();
-            boolean fingerPrintsMatched = fingerPrintsRecognizer.recognize(getUsername());
+            boolean fingerPrintsMatched = fingerPrintsRecognizer.recognize(getUsername(), fingerPrintImage);
             if (fingerPrintsMatched) {
                 VoiceRecognizer voiceRecognizer = new VoiceRecognizer();
-                if (voiceRecognizer.recognize(getUsername())) {
+                if (voiceRecognizer.recognize(getUsername(), fingerPrintImage)) {
                     JOptionPane.showMessageDialog(UsernameFrame.this, "Hi " + getUsername() + "! You have successfully logged in.", "Login", JOptionPane.INFORMATION_MESSAGE);
                 } else {
                     JOptionPane.showMessageDialog(UsernameFrame.this, "Identification failed!", "Login", JOptionPane.ERROR_MESSAGE);
@@ -52,8 +53,19 @@ public class UsernameFrame extends JFrame {
         bp.add(btnLogin);
         bp.add(btnCancel);
 
-        getContentPane().add(panel, BorderLayout.CENTER);
-        getContentPane().add(bp, BorderLayout.PAGE_END);
+        log = new JTextArea(5,20);
+        log.setMargin(new Insets(5,5,5,5));
+        log.setEditable(false);
+        JScrollPane logScrollPane = new JScrollPane(log);
+
+        JButton sendButton = new JButton("Choose finger print image:");
+        sendButton.addActionListener(this);
+
+        panel.add(sendButton);
+        panel.add(logScrollPane);
+
+        add(panel, BorderLayout.CENTER);
+        add(bp, BorderLayout.PAGE_END);
 
         pack();
         setResizable(false);
