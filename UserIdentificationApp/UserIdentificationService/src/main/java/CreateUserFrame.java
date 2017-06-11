@@ -46,11 +46,13 @@ public class CreateUserFrame extends JFrame implements ActionListener {
         btnCreate = new JButton("Create");
 
         btnCreate.addActionListener(e -> {
-            UserServiceImpl userService = new UserServiceImpl();
-            Integer userId = userService.createOrUpdateUser(tfUsername.getText());
+            if (fingerPrintImage != null) {
+                UserServiceImpl userService = new UserServiceImpl();
+                Integer userId = userService.createOrUpdateUser(tfUsername.getText());
 
-            FingerPrintsRecognizer fingerPrintsRecognizer = new FingerPrintsRecognizer();
-            fingerPrintsRecognizer.saveUserFingerPrintInfo(userId, fingerPrintImage);
+                FingerPrintsRecognizer fingerPrintsRecognizer = new FingerPrintsRecognizer();
+                fingerPrintsRecognizer.saveUserFingerPrintInfo(userId, fingerPrintImage);
+            }
 
             UsernameFrame loginDlg = new UsernameFrame(width, height);
             loginDlg.setVisible(true);

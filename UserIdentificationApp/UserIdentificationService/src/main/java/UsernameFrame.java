@@ -37,14 +37,20 @@ public class UsernameFrame extends CreateUserFrame implements ActionListener {
         btnLogin.addActionListener(e -> {
             dispose();
             FingerPrintsRecognizer fingerPrintsRecognizer = new FingerPrintsRecognizer();
-            boolean fingerPrintsMatched = fingerPrintsRecognizer.recognize(getUsername(), fingerPrintImage);
+            boolean fingerPrintsMatched = false;
+            if(fingerPrintImage != null && fingerPrintsRecognizer.recognize(getUsername(), fingerPrintImage)) {
+                fingerPrintsMatched = true;
+            }
+
             if (fingerPrintsMatched) {
                 VoiceRecognizer voiceRecognizer = new VoiceRecognizer();
-                if (voiceRecognizer.recognize(getUsername(), fingerPrintImage)) {
+                if (voiceRecognizer.recognize(getUsername(), null)) {
                     JOptionPane.showMessageDialog(UsernameFrame.this, "Hi " + getUsername() + "! You have successfully logged in.", "Login", JOptionPane.INFORMATION_MESSAGE);
                 } else {
                     JOptionPane.showMessageDialog(UsernameFrame.this, "Identification failed!", "Login", JOptionPane.ERROR_MESSAGE);
                 }
+            } else {
+                JOptionPane.showMessageDialog(UsernameFrame.this, "Identification failed!", "Login", JOptionPane.ERROR_MESSAGE);
             }
         });
         btnCancel = new JButton("Cancel");

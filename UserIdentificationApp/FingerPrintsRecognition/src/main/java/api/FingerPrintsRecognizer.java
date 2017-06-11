@@ -51,7 +51,7 @@ public class FingerPrintsRecognizer implements Recognizer {
         Image img;
         try {
             img = fileToImage(file);
-            return identifyUser(img, username);
+            return img != null && identifyUser(img, username);
         } catch (Exception e) {
             log.error("Unexpected exception while identifying user", e);
             return false;
@@ -92,6 +92,10 @@ public class FingerPrintsRecognizer implements Recognizer {
     private boolean compareToStoredFingerprint(Image imageFromLines, String userName) {
         MinutiaeSet minutiaeSet = extractMinutiaeSetFromImage(imageFromLines);
         User user = userFinder.findByUserName(userName);
+        if(user == null) {
+            log.error("No user with such login! {}", userName);
+            return false;
+        }
         return compareMinutiaeSets(minutiaeSet, minutiaeSetFinder.findById(user.getMinutiaeSetId()));
     }
 
