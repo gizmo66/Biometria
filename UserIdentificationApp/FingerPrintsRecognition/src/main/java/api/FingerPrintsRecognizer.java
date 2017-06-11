@@ -1,3 +1,10 @@
+package api;
+
+import database.finder.MinutiaeSetFinder;
+import database.finder.UserFinder;
+import database.model.Minutiae;
+import database.model.MinutiaeSet;
+import database.model.User;
 import lombok.extern.slf4j.Slf4j;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
@@ -12,7 +19,6 @@ import java.awt.geom.AffineTransform;
 import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
-import java.awt.Color;
 import java.io.File;
 
 /**
@@ -32,6 +38,14 @@ public class FingerPrintsRecognizer implements Recognizer {
     private static final int WINDOW_POS_X = 100;
     private static final int WINDOW_POS_Y = 20;
 
+    private UserFinder userFinder;
+    private MinutiaeSetFinder minutiaeSetFinder;
+
+    public FingerPrintsRecognizer() {
+        userFinder = new UserFinder();
+        minutiaeSetFinder = new MinutiaeSetFinder();
+    }
+
     @Override
     public boolean recognize(String username) {
         System.loadLibrary(LIB_NAME);
@@ -40,7 +54,7 @@ public class FingerPrintsRecognizer implements Recognizer {
         Image img;
         try {
             img = loadImage();
-            return identifyUser(img);
+            return identifyUser(img, username);
         } catch (CannotLoadImageException e) {
             log.error("Cannot load image", e);
             return false;
@@ -51,7 +65,7 @@ public class FingerPrintsRecognizer implements Recognizer {
 
     }
 
-    private boolean identifyUser(Image img) {
+    private boolean identifyUser(Image img, String userName) {
         int displayIteration = 0;
         displayImage(upscaleImage((BufferedImage)img, 1.5), displayIteration, "Input image");
 
@@ -64,10 +78,7 @@ public class FingerPrintsRecognizer implements Recognizer {
         Image imageFromLines = Skeletonization.skeletonize(binaryImage);
         displayImage(upscaleImage((BufferedImage)imageFromLines, 2), ++displayIteration, "Lines extracted");
 
-        Image imageWithCharacteristics = extractCharacteristic(upscaleImage((BufferedImage)imageFromLines, 2));
-        displayImage(imageWithCharacteristics, ++displayIteration, "Extracted characteristics");
-
-        return compareToStoredFingerprint();
+        return compareToStoredFingerprint(imageFromLines, userName);
     }
 
     private BufferedImage upscaleImage(BufferedImage img, double scale){
@@ -82,12 +93,36 @@ public class FingerPrintsRecognizer implements Recognizer {
         return upscaledImg;
     }
 
-    private boolean compareToStoredFingerprint() {
+    private boolean compareToStoredFingerprint(Image imageFromLines, String userName) {
+        MinutiaeSet minutiaeSet = extractMinutiaeSetFromImage(imageFromLines);
+        User user = userFinder.findByUserName(userName);
+        return compareMinutiaeSets(minutiaeSet, minutiaeSetFinder.findById(user.getMinutiaeSetId()));
+    }
+
+    private boolean compareMinutiaeSets(MinutiaeSet minutiaeSet, MinutiaeSet minutiaeSet1) {
+        //TODO
         return true;
     }
 
-    private Image extractCharacteristic(Image img) {
-        return img;
+    public static MinutiaeSet extractMinutiaeSetFromImage(Image imageFromLines) {
+        MinutiaeSet minutiaeSet = new MinutiaeSet();
+
+        //TODO TEST
+        Minutiae minutiae1 = new Minutiae();
+        minutiae1.setValue("test1");
+
+        Minutiae minutiae2 = new Minutiae();
+        minutiae2.setValue(String.valueOf(146326));
+
+        minutiaeSet.getMinutiaeList().add(minutiae1);
+        minutiaeSet.getMinutiaeList().add(minutiae2);
+        //TODO
+
+        return minutiaeSet;
+    }
+
+    public static MinutiaeSet extractMinutiaeSetFromImage(File imageFile) {
+        return extractMinutiaeSetFromImage(fileToImage(imageFile));
     }
 
     private Image convertToBinary(Image img) {
@@ -157,6 +192,14 @@ public class FingerPrintsRecognizer implements Recognizer {
         Imgproc.resize(src, resizedImage, size);
 
         return toBufferedImage(resizedImage);
+    }
+
+    private static Image fileToImage(File file) {
+        System.loadLibrary(LIB_NAME);
+        log.info(WELCOME_MESSAGE, Core.VERSION);
+
+        Mat src = Imgcodecs.imread(file.getAbsolutePath().replaceAll("\\\\", "/"));
+        return toBufferedImage(src);
     }
 
     public static Image toBufferedImage(Mat m) {

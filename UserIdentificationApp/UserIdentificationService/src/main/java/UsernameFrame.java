@@ -1,3 +1,5 @@
+import api.FingerPrintsRecognizer;
+
 import javax.swing.*;
 import java.awt.*;
 

@@ -1,3 +1,5 @@
+import api.Recognizer;
+
 /**
  * @author Adam
  */
