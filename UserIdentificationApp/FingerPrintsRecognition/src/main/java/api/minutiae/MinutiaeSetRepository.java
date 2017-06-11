@@ -22,11 +22,7 @@ public class MinutiaeSetRepository {
     }
 
     public Integer save(MinutiaeSet minutiaeSet) {
-        if(minutiaeSet.getId() != null) {
-            return update(minutiaeSet);
-        } else {
-            return createNewMinutiaeSet(minutiaeSet);
-        }
+        return createNewMinutiaeSet(minutiaeSet);
     }
 
     private Integer createNewMinutiaeSet(MinutiaeSet minutiaeSet) {
@@ -46,11 +42,6 @@ public class MinutiaeSetRepository {
         }
 
         return minutiaeSetId;
-    }
-
-    private Integer update(MinutiaeSet minutiaeSet) {
-        //TODO
-        return minutiaeSet.getId();
     }
 
     private int generateId() {

@@ -78,23 +78,4 @@ public class Skeletonization {
         return thinnedImg;
     }
 
-    public static Image joinLines(Image srcImage) {
-        int width = ((BufferedImage)srcImage).getWidth();
-        int height = ((BufferedImage)srcImage).getHeight();
-
-        Color[][] pixels = new Color[width][height];
-
-        for(int w = 0; w < width; w++) {
-            for(int h = 0; h < height; h++) {
-                pixels[w][h] = new Color(((BufferedImage) srcImage).getRGB(w, h));
-            }
-        }
-
-        joinLines((BufferedImage) srcImage, width, height, pixels);
-        return srcImage;
-    }
-
-    private static void joinLines(BufferedImage srcImage, int width, int height, Color[][] pixels) {
-        //TODO akolodziejek
-    }
 }

@@ -15,8 +15,11 @@ public class UserServiceImpl {
         userRepository = new UserRepository();
     }
 
-    public Integer createUser(String userName) {
-        User newUser = userFactory.createNewUser(userName);
-        return userRepository.save(newUser);
+    public Integer createOrUpdateUser(String userName) {
+        User user = userRepository.findByName(userName);
+        if (user == null) {
+            user = userFactory.createNewUser(userName);
+        }
+        return userRepository.save(user);
     }
 }
