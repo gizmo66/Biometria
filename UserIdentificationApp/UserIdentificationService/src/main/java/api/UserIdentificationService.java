@@ -1,6 +1,6 @@
 package api;
 
-import database.finder.UserFinder;
+import api.user.UserRepository;
 import org.apache.commons.collections4.CollectionUtils;
 import view.frame.LoginFrame;
 
@@ -10,8 +10,9 @@ import view.frame.LoginFrame;
 public class UserIdentificationService {
 
     public static void main(String[] args) {
-        UserFinder userFinder = new UserFinder();
-        boolean atLeastOneUserInDatabase = CollectionUtils.isNotEmpty(userFinder.findAll());
-        LoginFrame login = new LoginFrame(300, 100, atLeastOneUserInDatabase);
+        UserRepository userRepository = new UserRepository();
+        boolean atLeastOneUserInDatabase = CollectionUtils.isNotEmpty(userRepository.findAll());
+        LoginFrame loginFrame = new LoginFrame();
+        loginFrame.createAndShow(300, 100, atLeastOneUserInDatabase);
     }
 }

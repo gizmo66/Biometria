@@ -8,7 +8,7 @@ import java.awt.*;
  */
 public class LoginFrame extends JFrame {
 
-    public LoginFrame(int width, int height, boolean atLeastOneUserInDatabase) {
+    public void createAndShow(int width, int height, boolean atLeastOneUserInDatabase) {
         setTitle("Login");
 
         final JPanel panel = new JPanel(new GridBagLayout());

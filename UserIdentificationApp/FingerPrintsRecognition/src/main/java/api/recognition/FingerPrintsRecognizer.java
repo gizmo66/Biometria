@@ -1,5 +1,6 @@
 package api.recognition;
 
+import api.user.UserServiceImpl;
 import view.dialog.FingerPrintRecognitionDialog;
 import api.image.ImageProcessingUtils;
 import api.Recognizer;
@@ -34,11 +35,13 @@ public class FingerPrintsRecognizer implements Recognizer {
 
     private UserFinder userFinder;
     private MinutiaeSetFinder minutiaeSetFinder;
+    private UserServiceImpl userService;
     private UserIdentifiedByFingerprintService userIdentifiedByFingerPrintService;
 
     public FingerPrintsRecognizer() {
         userFinder = new UserFinder();
         minutiaeSetFinder = new MinutiaeSetFinder();
+        userService = new UserServiceImpl();
         userIdentifiedByFingerPrintService = new UserIdentifiedByFingerprintService();
     }
 
@@ -126,7 +129,8 @@ public class FingerPrintsRecognizer implements Recognizer {
         dialog.setVisible(true);
     }
 
-    public void saveUserFingerPrintInfo(Integer userId, File fingerPrintImage) {
+    public void saveUserFingerPrintInfo(String userName, File fingerPrintImage) {
+        Integer userId = userService.createOrUpdateUser(userName);
         MinutiaeSet minutiaeSet = FingerPrintsRecognizer.extractMinutiaeSetFromImage(fingerPrintImage);
         minutiaeSet.setUserId(userId);
         userIdentifiedByFingerPrintService.setMinutiaeSet(userId, minutiaeSet);

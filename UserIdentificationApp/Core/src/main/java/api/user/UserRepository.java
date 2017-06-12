@@ -6,6 +6,8 @@ import database.mapper.UserResultSetMapper;
 import database.model.User;
 import org.apache.commons.lang3.StringUtils;
 
+import java.util.List;
+
 /**
  * @author Adam
  */
@@ -15,6 +17,15 @@ public class UserRepository {
 
     public UserRepository() {
         databaseHelper = new DatabaseHelper();
+    }
+
+    public List<User> findAll() {
+        StringBuilder sql = new StringBuilder();
+
+        sql.append("SELECT * ");
+        sql.append("FROM AUTH_USER ");
+
+        return UserResultSetMapper.extract(databaseHelper.executeQuery(sql.toString()), databaseHelper.getConnection());
     }
 
     public Integer save(User user) {
