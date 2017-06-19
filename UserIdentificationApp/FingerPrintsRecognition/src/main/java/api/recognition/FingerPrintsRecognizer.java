@@ -67,14 +67,17 @@ public class FingerPrintsRecognizer implements Recognizer {
 
         displayImage(upscaleImage((BufferedImage)img, 1.5), displayIteration, "Input image");
 
-        Image blackAndWhiteImage = convertToBlackAndWhite(img, 0.9f);
+        Image blackAndWhiteImage = convertToBlackAndWhite(img, 0.7f);
         displayImage(upscaleImage((BufferedImage)blackAndWhiteImage, 1.5), ++displayIteration, "Greyscale image");
 
-        Image binaryImage = convertToBinary(blackAndWhiteImage);
+        Image stretchedHistogramImage = stretchHistogram(blackAndWhiteImage);
+        displayImage(upscaleImage((BufferedImage)stretchedHistogramImage, 1.5), ++displayIteration, "Stretched histogram");
+
+        Image binaryImage = convertToBinary(stretchedHistogramImage);
         displayImage(upscaleImage((BufferedImage)binaryImage, 1.5), ++displayIteration, "Black and white image");
 
         Image imageFromLines = ImageProcessingUtils.skeletonize(binaryImage);
-        displayImage(upscaleImage((BufferedImage)imageFromLines, 2), ++displayIteration, "Lines extracted");
+        displayImage(upscaleImage((BufferedImage)imageFromLines, 1.5), ++displayIteration, "Lines extracted");
 
         return compareToStoredFingerprint(imageFromLines, userName);
     }

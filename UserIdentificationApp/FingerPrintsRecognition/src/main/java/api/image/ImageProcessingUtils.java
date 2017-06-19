@@ -115,7 +115,7 @@ public class ImageProcessingUtils {
                 Color bwPixel;
                 //porównuję tylko wartość niebieskiego, bo zakładam, że fukcja operuje na obrazku w skali szarości
                 //w związku z tym wartości czeronego i zielonego będą takie same
-                if (pixel.getBlue() < 155) bwPixel = new Color(0, 0, 0);
+                if (pixel.getBlue() < 140) bwPixel = new Color(0, 0, 0);
                 else bwPixel = new Color(255, 255, 255);
 
                 ((BufferedImage) result).setRGB(x, y, bwPixel.getRGB());
@@ -149,6 +149,58 @@ public class ImageProcessingUtils {
             }
         }
         return result;
+    }
+
+    public static Image stretchHistogram(Image image) {
+        Mat src = bufferedImageToMat((BufferedImage) image);
+        Image result = toBufferedImage(src);
+        int height = ((BufferedImage) result).getHeight();
+        int width = ((BufferedImage) result).getWidth();
+
+        double[] LUTgray = new double[256];
+        int i, j, grayValue;
+        int grayMin, grayMax;
+        Color color;
+
+        grayMin = 255;
+        grayMax = 1;
+        for (i = 0; i < width; i++) {
+            for (j = 0; j < height; j++) {
+                color = new Color(((BufferedImage) result).getRGB(i, j));
+                grayValue = color.getRed();
+                if (grayValue > grayMax) {
+                    grayMax = grayValue;
+                }
+                if (grayValue < grayMin) {
+                    grayMin = grayValue;
+                }
+            }
+        }
+
+        updateLUT(255.0 / (grayMax - grayMin), -grayMin, LUTgray);
+
+        for (i = 0; i < width; i++) {
+
+            for (j = 0; j < height; j++) {
+                color = new Color(((BufferedImage) result).getRGB(i, j));
+                grayValue = color.getRed();
+                ((BufferedImage) result).setRGB(i, j, (int) LUTgray[grayValue] + ((int) LUTgray[grayValue] << 8) + ((int) LUTgray[grayValue] << 16));
+            }
+        }
+        return result;
+    }
+
+    private static void updateLUT(double a, int b, double[] LUT) {
+        int i;
+        for (i = 0; i < 256; i++) {
+            if ((a * (i + b)) > 255) {
+                LUT[i] = 255;
+            } else if ((a * (i + b)) < 0) {
+                LUT[i] = 0;
+            } else {
+                LUT[i] = (a * (i + b));
+            }
+        }
     }
 
     public static Image fileToImage(File file) {
