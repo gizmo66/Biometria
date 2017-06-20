@@ -211,7 +211,7 @@ public class ImageProcessingUtils {
         return toBufferedImage(src);
     }
 
-    private static Image toBufferedImage(Mat m) {
+    public static Image toBufferedImage(Mat m) {
         int type = BufferedImage.TYPE_BYTE_GRAY;
         if (m.channels() > 1) {
             type = BufferedImage.TYPE_3BYTE_BGR;
@@ -225,7 +225,7 @@ public class ImageProcessingUtils {
         return image;
     }
 
-    private static Mat bufferedImageToMat(BufferedImage bi) {
+    public static Mat bufferedImageToMat(BufferedImage bi) {
         Mat mat = new Mat(bi.getHeight(), bi.getWidth(), CvType.CV_8UC3);
         byte[] data = ((DataBufferByte) bi.getRaster().getDataBuffer()).getData();
         mat.put(0, 0, data);

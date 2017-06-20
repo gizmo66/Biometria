@@ -1,10 +1,9 @@
 package api.recognition;
 
-import api.user.UserServiceImpl;
-import view.dialog.FingerPrintRecognitionDialog;
-import api.image.ImageProcessingUtils;
 import api.Recognizer;
+import api.image.ImageProcessingUtils;
 import api.user.UserIdentifiedByFingerprintService;
+import api.user.UserServiceImpl;
 import database.finder.MinutiaeSetFinder;
 import database.finder.UserFinder;
 import database.model.Minutiae;
@@ -12,6 +11,7 @@ import database.model.MinutiaeSet;
 import database.model.User;
 import lombok.extern.slf4j.Slf4j;
 import org.opencv.core.Core;
+import view.dialog.FingerPrintRecognitionDialog;
 
 import javax.swing.*;
 import java.awt.*;
@@ -62,24 +62,26 @@ public class FingerPrintsRecognizer implements Recognizer {
     }
 
     private boolean identifyUser(Image img, String userName) {
+        Image imageFromLines = processImage(img);
+        return compareToStoredFingerprint(imageFromLines, userName);
+    }
+
+    private Image processImage(Image img) {
         int displayIteration = 0;
         img = upscaleImage((BufferedImage)img, 0.5);
-
-        displayImage(upscaleImage((BufferedImage)img, 1.5), displayIteration, "Input image");
+        //displayImage(upscaleImage((BufferedImage)img, 1.5), displayIteration, "Input image");
 
         Image blackAndWhiteImage = convertToBlackAndWhite(img, 0.7f);
-        displayImage(upscaleImage((BufferedImage)blackAndWhiteImage, 1.5), ++displayIteration, "Greyscale image");
+        //displayImage(upscaleImage((BufferedImage)blackAndWhiteImage, 1.5), ++displayIteration, "Greyscale image");
 
         Image stretchedHistogramImage = stretchHistogram(blackAndWhiteImage);
-        displayImage(upscaleImage((BufferedImage)stretchedHistogramImage, 1.5), ++displayIteration, "Stretched histogram");
+        //displayImage(upscaleImage((BufferedImage)stretchedHistogramImage, 1.5), ++displayIteration, "Stretched histogram");
 
         Image binaryImage = convertToBinary(stretchedHistogramImage);
-        displayImage(upscaleImage((BufferedImage)binaryImage, 1.5), ++displayIteration, "Black and white image");
+        //displayImage(upscaleImage((BufferedImage)binaryImage, 1.5), ++displayIteration, "Black and white image");
 
-        Image imageFromLines = ImageProcessingUtils.skeletonize(binaryImage);
-        displayImage(upscaleImage((BufferedImage)imageFromLines, 1.5), ++displayIteration, "Lines extracted");
-
-        return compareToStoredFingerprint(imageFromLines, userName);
+        //displayImage(upscaleImage((BufferedImage)imageFromLines, 1.5), ++displayIteration, "Lines extracted");
+        return ImageProcessingUtils.skeletonize(binaryImage);
     }
 
     private boolean compareToStoredFingerprint(Image imageFromLines, String userName) {
@@ -93,29 +95,64 @@ public class FingerPrintsRecognizer implements Recognizer {
     }
 
     private boolean compareMinutiaeSets(MinutiaeSet minutiaeSet, MinutiaeSet minutiaeSet1) {
-        //TODO: porównać oba zbiory minucji ilościowo i jakościowo
+        //TODO: porównać oba zbiory minucji (znależć najlepsze dopasowanie i sprawdzić czy zgadza się CN)
         return true;
     }
 
     public static MinutiaeSet extractMinutiaeSetFromImage(Image imageFromLines) {
         MinutiaeSet minutiaeSet = new MinutiaeSet();
 
-        //TODO: tylko do testów - do usunięcia po napisaniu logiki
-        Minutiae minutiae1 = new Minutiae();
-        minutiae1.setValue("test1");
+        int height = ((BufferedImage) imageFromLines).getHeight();
+        int width = ((BufferedImage) imageFromLines).getWidth();
 
-        Minutiae minutiae2 = new Minutiae();
-        minutiae2.setValue(String.valueOf(146326));
+        //TODO akolodziejek: pominąć minucje na brzegach odcisku
+        for (int h = 2; h < height - 2; h++) {
+            for (int w = 2; w < width - 2; w++) {
+                if (getBinary(imageFromLines, w, h) == 1) {
+                    double CN = 0;
 
-        minutiaeSet.getMinutiaeList().add(minutiae1);
-        minutiaeSet.getMinutiaeList().add(minutiae2);
-        //TODO: wyciąganie cech z użyciem Crossing Number
+                    int[] P = new int[9];
 
+                    P[1] = getBinary(imageFromLines, w+1, h);
+                    P[2] = getBinary(imageFromLines, w+1, h-1);
+                    P[3] = getBinary(imageFromLines, w, h-1);
+                    P[4] = getBinary(imageFromLines, w-1, h-1);
+                    P[5] = getBinary(imageFromLines, w-1, h);
+                    P[6] = getBinary(imageFromLines, w-1, h+1);
+                    P[7] = getBinary(imageFromLines, w, h+1);
+                    P[8] = getBinary(imageFromLines, w+1, h+1);
+
+                    for(int i = 1; i < 8; i++) {
+                        CN += Math.abs(P[i] - P[i+1]);
+                    }
+                    CN = CN * 0.5;
+
+                    //TODO akolodziejek: inne wartosci CN
+                    if (CN == Math.ceil(CN) && (CN == 1 || CN == 3)) {
+                        Minutiae minutiae1 = new Minutiae();
+                        minutiae1.setValue(w + ";" + h + ";" + CN);
+                        minutiaeSet.getMinutiaeList().add(minutiae1);
+
+                        //TODO: akolodziejek: koniecznie przerobić
+                        ((BufferedImage) imageFromLines).setRGB(w+1, h-1, Color.RED.getRGB());
+                        ((BufferedImage) imageFromLines).setRGB(w-1, h-1, Color.RED.getRGB());
+                        ((BufferedImage) imageFromLines).setRGB(w-1, h+1, Color.RED.getRGB());
+                        ((BufferedImage) imageFromLines).setRGB(w+1, h+1, Color.RED.getRGB());
+                        ((BufferedImage) imageFromLines).setRGB(w, h+2, Color.RED.getRGB());
+                        ((BufferedImage) imageFromLines).setRGB(w, h-2, Color.RED.getRGB());
+                        ((BufferedImage) imageFromLines).setRGB(w-2, h, Color.RED.getRGB());
+                        ((BufferedImage) imageFromLines).setRGB(w+2, h, Color.RED.getRGB());
+                    }
+                }
+            }
+        }
+        displayImage(upscaleImage((BufferedImage) imageFromLines, 3), 1, "");
         return minutiaeSet;
     }
 
-    public static MinutiaeSet extractMinutiaeSetFromImage(File imageFile) {
-        return extractMinutiaeSetFromImage(fileToImage(imageFile));
+    private static int getBinary(Image image, int w, int h) {
+        Color p = new Color(((BufferedImage) image).getRGB(w, h));
+        return p.getRed() == 255 ? 0 : 1;
     }
 
     public static void displayImage(Image img, int iteration, String windowName) {
@@ -134,7 +171,8 @@ public class FingerPrintsRecognizer implements Recognizer {
 
     public void saveUserFingerPrintInfo(String userName, File fingerPrintImage) {
         Integer userId = userService.createOrUpdateUser(userName);
-        MinutiaeSet minutiaeSet = FingerPrintsRecognizer.extractMinutiaeSetFromImage(fingerPrintImage);
+        BufferedImage image = (BufferedImage) fileToImage(fingerPrintImage);
+        MinutiaeSet minutiaeSet = FingerPrintsRecognizer.extractMinutiaeSetFromImage(processImage(image));
         minutiaeSet.setUserId(userId);
         userIdentifiedByFingerPrintService.setMinutiaeSet(userId, minutiaeSet);
     }
