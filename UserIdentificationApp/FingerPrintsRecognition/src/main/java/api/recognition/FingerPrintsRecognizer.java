@@ -18,6 +18,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 import static api.image.ImageProcessingUtils.*;
 
@@ -149,20 +151,47 @@ public class FingerPrintsRecognizer implements Recognizer {
             }
         }
 
-        //TODO akolodziejek: remove false minutiaes
+        List<Minutiae> minutiaesToRemove = getFalseMinutiaes(minutiaeSet.getMinutiaeList(), width, height, imageFromLines, result);
+        minutiaeSet.getMinutiaeList().removeAll(minutiaesToRemove);
+
+        Image result1 = new BufferedImage(width, height, BufferedImage.TYPE_3BYTE_BGR);
+
+        for (int h = 0; h < height; h++) {
+            for (int w = 0; w < width; w++) {
+                ((BufferedImage) result1).setRGB(w, h, ((BufferedImage) imageFromLines).getRGB(w, h));
+            }
+        }
+
+        for(Minutiae minutiae : minutiaesToRemove) {
+            int w = minutiae.getX();
+            int h = minutiae.getY();
+
+            int rgb = Color.RED.getRGB();
+
+            ((BufferedImage) result1).setRGB(w+1, h-1, rgb);
+            ((BufferedImage) result1).setRGB(w-1, h-1, rgb);
+            ((BufferedImage) result1).setRGB(w-1, h+1, rgb);
+            ((BufferedImage) result1).setRGB(w+1, h+1, rgb);
+            ((BufferedImage) result1).setRGB(w, h+2, rgb);
+            ((BufferedImage) result1).setRGB(w, h-2, rgb);
+            ((BufferedImage) result1).setRGB(w-2, h, rgb);
+            ((BufferedImage) result1).setRGB(w+2, h, rgb);
+        }
+
+        displayImage(upscaleImage((BufferedImage) result1, 2), 5, "");
 
         for(Minutiae minutiae : minutiaeSet.getMinutiaeList()) {
             int w = minutiae.getX();
             int h = minutiae.getY();
             int CN = MinutiaeTypeEnum.getByCode(minutiae.getType()).getCN();
 
-            int rgb = Color.MAGENTA.getRGB();
+            int rgb = Color.YELLOW.getRGB();
             if(CN == 1) {
                 rgb = Color.BLUE.getRGB();
             } else if (CN == 3){
-                rgb = Color.RED.getRGB();
+                rgb = Color.CYAN.getRGB();
             } else if (CN == 4) {
-                rgb = Color.GREEN.getRGB();
+                rgb = Color.MAGENTA.getRGB();
             }
 
             ((BufferedImage) result).setRGB(w+1, h-1, rgb);
@@ -175,8 +204,90 @@ public class FingerPrintsRecognizer implements Recognizer {
             ((BufferedImage) result).setRGB(w+2, h, rgb);
         }
 
-        displayImage(upscaleImage((BufferedImage) result, 2), 5, "");
+        displayImage(upscaleImage((BufferedImage) result, 2), 6, "");
         return minutiaeSet;
+    }
+
+    private static List<Minutiae> getFalseMinutiaes(List<Minutiae> minutiaes, int width, int height, Image imageFromLines, Image result) {
+        List<Minutiae> minutiaesToRemove = new ArrayList<>();
+
+        for (Minutiae minutiae1 : minutiaes) {
+            for (int i = minutiae1.getX() - 1; i > 0; i--) {
+                //((BufferedImage) result).setRGB(i, minutiae1.getY(), Color.yellow.getRGB());
+                if (((BufferedImage) imageFromLines).getRGB(i, minutiae1.getY()) == Color.black.getRGB()) {
+                    break;
+                } else if (i == 1) {
+                    minutiaesToRemove.add(minutiae1);
+                }
+            }
+
+            for (int i = minutiae1.getX() + 1; i < width; i++) {
+                //((BufferedImage) result).setRGB(i, minutiae1.getY(), Color.yellow.getRGB());
+                if (((BufferedImage) imageFromLines).getRGB(i, minutiae1.getY()) == Color.black.getRGB()) {
+                    break;
+                } else if (i == width - 1) {
+                    minutiaesToRemove.add(minutiae1);
+                }
+            }
+
+            for (int i = minutiae1.getY() - 1; i > 0; i--) {
+                //((BufferedImage) result).setRGB(minutiae1.getX(), i, Color.yellow.getRGB());
+                if (((BufferedImage) imageFromLines).getRGB(minutiae1.getX(), i) == Color.black.getRGB()) {
+                    break;
+                } else if (i == 1) {
+                    minutiaesToRemove.add(minutiae1);
+                }
+            }
+
+            for (int i = minutiae1.getY() + 1; i < height; i++) {
+                //((BufferedImage) result).setRGB(minutiae1.getX(), i, Color.yellow.getRGB());
+                if (((BufferedImage) imageFromLines).getRGB(minutiae1.getX(), i) == Color.black.getRGB()) {
+                    break;
+                } else if (i == height - 1) {
+                    minutiaesToRemove.add(minutiae1);
+                }
+            }
+        }
+
+        for (Minutiae minutiae1 : minutiaes) {
+            for (Minutiae minutiae2 : minutiaes) {
+                if (!minutiae1.equals(minutiae2) && minutiae1.getType().equals(MinutiaeTypeEnum.ENDING_POINT.getCode()) &&
+                    (minutiae2.getType().equals(MinutiaeTypeEnum.BIFURCATION_POINT.getCode()) || minutiae2.getType().equals(MinutiaeTypeEnum.CROSSING_POINT.getCode()))) {
+                    double distance = Math.sqrt(Math.pow(minutiae2.getX() - minutiae1.getX(), 2) + Math.pow(minutiae2.getY() - minutiae1.getY(), 2));
+                    if (distance < 3) {
+                        minutiaesToRemove.add(minutiae1);
+                        minutiaesToRemove.add(minutiae2);
+                    }
+                }
+            }
+        }
+
+        for (Minutiae minutiae1 : minutiaes) {
+            for (Minutiae minutiae2 : minutiaes) {
+                if (!minutiae1.equals(minutiae2) && minutiae1.getType().equals(MinutiaeTypeEnum.ENDING_POINT.getCode()) &&
+                    (minutiae2.getType().equals(MinutiaeTypeEnum.ENDING_POINT.getCode()))) {
+                    double distance = Math.sqrt(Math.pow(minutiae2.getX() - minutiae1.getX(), 2) + Math.pow(minutiae2.getY() - minutiae1.getY(), 2));
+                    if (distance < 5) {
+                        minutiaesToRemove.add(minutiae1);
+                        minutiaesToRemove.add(minutiae2);
+                    }
+                }
+            }
+        }
+
+        for (Minutiae minutiae1 : minutiaes) {
+            for (Minutiae minutiae2 : minutiaes) {
+                if (!minutiae1.equals(minutiae2) && minutiae1.getType().equals(MinutiaeTypeEnum.BIFURCATION_POINT.getCode()) &&
+                    (minutiae2.getType().equals(MinutiaeTypeEnum.BIFURCATION_POINT.getCode()))) {
+                    double distance = Math.sqrt(Math.pow(minutiae2.getX() - minutiae1.getX(), 2) + Math.pow(minutiae2.getY() - minutiae1.getY(), 2));
+                    if (distance < 5) {
+                        minutiaesToRemove.add(minutiae1);
+                        minutiaesToRemove.add(minutiae2);
+                    }
+                }
+            }
+        }
+        return minutiaesToRemove;
     }
 
     public static int getBinary(Image image, int w, int h) {
