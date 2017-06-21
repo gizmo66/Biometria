@@ -22,7 +22,9 @@ public class MinutiaeResultSetMapper extends AbstractResultSetMapper {
                 while (resultSet.next()) {
                     Minutiae minutiae = new Minutiae();
                     minutiae.setId(resultSet.getInt("id"));
-                    minutiae.setValue(resultSet.getString("value"));
+                    minutiae.setX(resultSet.getInt("x"));
+                    minutiae.setY(resultSet.getInt("y"));
+                    minutiae.setType(resultSet.getString("type"));
                     minutiaeList.add(minutiae);
                 }
                 return minutiaeList;

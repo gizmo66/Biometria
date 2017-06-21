@@ -21,7 +21,11 @@ public class MinutiaeRepository {
         StringBuilder sql = new StringBuilder();
 
         sql.append("INSERT INTO MINUTIAE VALUES (");
-        sql.append(minutiaeId).append(", ").append(minutiaeSetId).append(", '").append(minutiae.getValue()).append("') ");
+        sql.append(minutiaeId).append(", ");
+        sql.append(minutiaeSetId).append(", ");
+        sql.append(minutiae.getX()).append(", ");
+        sql.append(minutiae.getY()).append(", ");
+        sql.append(", '").append(minutiae.getType()).append("') ");
 
         databaseHelper.executeUpdate(sql.toString());
         return minutiaeId;

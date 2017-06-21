@@ -2,6 +2,7 @@ package api.recognition;
 
 import api.Recognizer;
 import api.image.ImageProcessingUtils;
+import api.minutiae.MinutiaeTypeEnum;
 import api.user.UserIdentifiedByFingerprintService;
 import api.user.UserServiceImpl;
 import database.finder.MinutiaeSetFinder;
@@ -139,8 +140,9 @@ public class FingerPrintsRecognizer implements Recognizer {
 
                     if (CN == Math.ceil(CN) && (CN == 1 || CN >= 3)) {
                         Minutiae minutiae1 = new Minutiae();
-                        //TODO akolodziejek: divide into 3 separated field of type int
-                        minutiae1.setValue(w + ";" + h + ";" + CN);
+                        minutiae1.setX(w);
+                        minutiae1.setY(h);
+                        minutiae1.setType(MinutiaeTypeEnum.getByCN((int) CN).getCode());
                         minutiaeSet.getMinutiaeList().add(minutiae1);
                     }
                 }
@@ -150,11 +152,9 @@ public class FingerPrintsRecognizer implements Recognizer {
         //TODO akolodziejek: remove false minutiaes
 
         for(Minutiae minutiae : minutiaeSet.getMinutiaeList()) {
-            String[] properties = minutiae.getValue().split("[;]");
-
-            int w = (int) Double.parseDouble(properties[0]);
-            int h = (int) Double.parseDouble(properties[1]);
-            int CN = (int) Double.parseDouble(properties[2]);
+            int w = minutiae.getX();
+            int h = minutiae.getY();
+            int CN = MinutiaeTypeEnum.getByCode(minutiae.getType()).getCN();
 
             int rgb = Color.MAGENTA.getRGB();
             if(CN == 1) {

@@ -14,5 +14,7 @@ import lombok.ToString;
 @ToString
 public class Minutiae extends Entity {
 
-    String value;
+    int x;
+    int y;
+    String type;
 }
