@@ -69,18 +69,17 @@ public class FingerPrintsRecognizer implements Recognizer {
     private Image processImage(Image img) {
         int displayIteration = 0;
         img = upscaleImage((BufferedImage)img, 0.5);
-        //displayImage(upscaleImage((BufferedImage)img, 1.5), displayIteration, "Input image");
+        displayImage(upscaleImage((BufferedImage)img, 1.5), displayIteration, "Input image");
 
         Image blackAndWhiteImage = convertToBlackAndWhite(img, 0.7f);
-        //displayImage(upscaleImage((BufferedImage)blackAndWhiteImage, 1.5), ++displayIteration, "Greyscale image");
+        displayImage(upscaleImage((BufferedImage)blackAndWhiteImage, 1.5), ++displayIteration, "Greyscale image");
 
         Image stretchedHistogramImage = stretchHistogram(blackAndWhiteImage);
-        //displayImage(upscaleImage((BufferedImage)stretchedHistogramImage, 1.5), ++displayIteration, "Stretched histogram");
+        displayImage(upscaleImage((BufferedImage)stretchedHistogramImage, 1.5), ++displayIteration, "Stretched histogram");
 
         Image binaryImage = convertToBinary(stretchedHistogramImage);
-        //displayImage(upscaleImage((BufferedImage)binaryImage, 1.5), ++displayIteration, "Black and white image");
+        displayImage(upscaleImage((BufferedImage)binaryImage, 1.5), ++displayIteration, "Black and white image");
 
-        //displayImage(upscaleImage((BufferedImage)imageFromLines, 1.5), ++displayIteration, "Lines extracted");
         return ImageProcessingUtils.skeletonize(binaryImage);
     }
 
@@ -95,7 +94,7 @@ public class FingerPrintsRecognizer implements Recognizer {
     }
 
     private boolean compareMinutiaeSets(MinutiaeSet minutiaeSet, MinutiaeSet minutiaeSet1) {
-        //TODO: porównać oba zbiory minucji (znależć najlepsze dopasowanie i sprawdzić czy zgadza się CN)
+        //TODO: porównać oba zbiory minucji (znależć najlepsze dopasowanie i sprawdzić czy zgadza się typ minucji (CN))
         return true;
     }
 
@@ -105,13 +104,23 @@ public class FingerPrintsRecognizer implements Recognizer {
         int height = ((BufferedImage) imageFromLines).getHeight();
         int width = ((BufferedImage) imageFromLines).getWidth();
 
-        //TODO akolodziejek: pominąć minucje na brzegach odcisku
+        Image result = new BufferedImage(width, height, BufferedImage.TYPE_3BYTE_BGR);
+
+        for (int h = 0; h < height; h++) {
+            for (int w = 0; w < width; w++) {
+                ((BufferedImage) result).setRGB(w, h, ((BufferedImage) imageFromLines).getRGB(w, h));
+            }
+        }
+
+        displayImage(upscaleImage((BufferedImage) imageFromLines, 2), 4, "");
+
         for (int h = 2; h < height - 2; h++) {
             for (int w = 2; w < width - 2; w++) {
+
                 if (getBinary(imageFromLines, w, h) == 1) {
                     double CN = 0;
 
-                    int[] P = new int[9];
+                    int[] P = new int[10];
 
                     P[1] = getBinary(imageFromLines, w+1, h);
                     P[2] = getBinary(imageFromLines, w+1, h-1);
@@ -121,38 +130,65 @@ public class FingerPrintsRecognizer implements Recognizer {
                     P[6] = getBinary(imageFromLines, w-1, h+1);
                     P[7] = getBinary(imageFromLines, w, h+1);
                     P[8] = getBinary(imageFromLines, w+1, h+1);
+                    P[9] = P[1];
 
-                    for(int i = 1; i < 8; i++) {
+                    for(int i = 1; i <= 8; i++) {
                         CN += Math.abs(P[i] - P[i+1]);
                     }
                     CN = CN * 0.5;
 
-                    //TODO akolodziejek: inne wartosci CN
-                    if (CN == Math.ceil(CN) && (CN == 1 || CN == 3)) {
+                    if (CN == Math.ceil(CN) && (CN == 1 || CN >= 3)) {
                         Minutiae minutiae1 = new Minutiae();
+                        //TODO akolodziejek: divide into 3 separated field of type int
                         minutiae1.setValue(w + ";" + h + ";" + CN);
                         minutiaeSet.getMinutiaeList().add(minutiae1);
-
-                        //TODO: akolodziejek: koniecznie przerobić
-                        ((BufferedImage) imageFromLines).setRGB(w+1, h-1, Color.RED.getRGB());
-                        ((BufferedImage) imageFromLines).setRGB(w-1, h-1, Color.RED.getRGB());
-                        ((BufferedImage) imageFromLines).setRGB(w-1, h+1, Color.RED.getRGB());
-                        ((BufferedImage) imageFromLines).setRGB(w+1, h+1, Color.RED.getRGB());
-                        ((BufferedImage) imageFromLines).setRGB(w, h+2, Color.RED.getRGB());
-                        ((BufferedImage) imageFromLines).setRGB(w, h-2, Color.RED.getRGB());
-                        ((BufferedImage) imageFromLines).setRGB(w-2, h, Color.RED.getRGB());
-                        ((BufferedImage) imageFromLines).setRGB(w+2, h, Color.RED.getRGB());
                     }
                 }
             }
         }
-        displayImage(upscaleImage((BufferedImage) imageFromLines, 3), 1, "");
+
+        //TODO akolodziejek: remove false minutiaes
+
+        for(Minutiae minutiae : minutiaeSet.getMinutiaeList()) {
+            String[] properties = minutiae.getValue().split("[;]");
+
+            int w = (int) Double.parseDouble(properties[0]);
+            int h = (int) Double.parseDouble(properties[1]);
+            int CN = (int) Double.parseDouble(properties[2]);
+
+            int rgb = Color.MAGENTA.getRGB();
+            if(CN == 1) {
+                rgb = Color.BLUE.getRGB();
+            } else if (CN == 3){
+                rgb = Color.RED.getRGB();
+            } else if (CN == 4) {
+                rgb = Color.GREEN.getRGB();
+            }
+
+            ((BufferedImage) result).setRGB(w+1, h-1, rgb);
+            ((BufferedImage) result).setRGB(w-1, h-1, rgb);
+            ((BufferedImage) result).setRGB(w-1, h+1, rgb);
+            ((BufferedImage) result).setRGB(w+1, h+1, rgb);
+            ((BufferedImage) result).setRGB(w, h+2, rgb);
+            ((BufferedImage) result).setRGB(w, h-2, rgb);
+            ((BufferedImage) result).setRGB(w-2, h, rgb);
+            ((BufferedImage) result).setRGB(w+2, h, rgb);
+        }
+
+        displayImage(upscaleImage((BufferedImage) result, 2), 5, "");
         return minutiaeSet;
     }
 
-    private static int getBinary(Image image, int w, int h) {
+    public static int getBinary(Image image, int w, int h) {
         Color p = new Color(((BufferedImage) image).getRGB(w, h));
-        return p.getRed() == 255 ? 0 : 1;
+        if(p.getRGB() == Color.BLACK.getRGB()) {
+            return 1;
+        } else if(p.getRGB() == Color.WHITE.getRGB()) {
+            return 0;
+        } else {
+            log.error("Invalid image");
+            return -1;
+        }
     }
 
     public static void displayImage(Image img, int iteration, String windowName) {
