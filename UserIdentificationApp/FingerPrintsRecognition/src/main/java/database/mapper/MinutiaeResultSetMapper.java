@@ -24,6 +24,7 @@ public class MinutiaeResultSetMapper extends AbstractResultSetMapper {
                     minutiae.setId(resultSet.getInt("id"));
                     minutiae.setX(resultSet.getInt("x"));
                     minutiae.setY(resultSet.getInt("y"));
+                    minutiae.setAngle(resultSet.getDouble("angle"));
                     minutiae.setType(resultSet.getString("type"));
                     minutiaeList.add(minutiae);
                 }

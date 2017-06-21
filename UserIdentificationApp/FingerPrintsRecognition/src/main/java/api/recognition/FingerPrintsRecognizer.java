@@ -16,6 +16,7 @@ import view.dialog.FingerPrintRecognitionDialog;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.geom.Point2D.Double;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.ArrayList;
@@ -99,6 +100,15 @@ public class FingerPrintsRecognizer implements Recognizer {
     private boolean compareMinutiaeSets(MinutiaeSet minutiaeSet, MinutiaeSet minutiaeSet1) {
         //TODO: porównać oba zbiory minucji (znależć najlepsze dopasowanie i sprawdzić czy zgadza się typ minucji (CN))
         return true;
+    }
+
+    public static double getAngleOfLineBetweenTwoPoints(Point.Double p1, Point.Double p2) {
+        double angle = Math.toDegrees(Math.atan2(p2.y - p1.y, p2.x - p1.x));
+
+        if(angle < 0){
+            angle += 360;
+        }
+        return angle;
     }
 
     public static MinutiaeSet extractMinutiaeSetFromImage(Image imageFromLines) {
@@ -188,9 +198,21 @@ public class FingerPrintsRecognizer implements Recognizer {
             int rgb = Color.YELLOW.getRGB();
             if(CN == 1) {
                 rgb = Color.BLUE.getRGB();
+
+                ((BufferedImage) result).setRGB(w, h, Color.GREEN.getRGB());
+                Double current = getNeighbour(result, w, h);
+                for(int i = 0; i < 5; i++) {
+                    current = getNeighbour(result, (int)current.x, (int)current.y);
+                }
+                minutiae.setAngle(getAngleOfLineBetweenTwoPoints(new Double(w, h), current));
+
             } else if (CN == 3){
+                //TODO obliczyc kat
+
                 rgb = Color.CYAN.getRGB();
             } else if (CN == 4) {
+                //TODO obliczyc kat
+
                 rgb = Color.MAGENTA.getRGB();
             }
 
@@ -206,6 +228,27 @@ public class FingerPrintsRecognizer implements Recognizer {
 
         displayImage(upscaleImage((BufferedImage) result, 2), 6, "");
         return minutiaeSet;
+    }
+
+    private static Double getNeighbour(Image image, int w, int h) {
+        Double[] D = new Double[9];
+
+        D[1] = new Double(w+1, h);
+        D[2] = new Double(w+1, h-1);
+        D[3] = new Double(w, h-1);
+        D[4] = new Double(w-1, h-1);
+        D[5] = new Double(w-1, h);
+        D[6] = new Double(w-1, h+1);
+        D[7] = new Double(w, h+1);
+        D[8] = new Double(w+1, h+1);
+
+        for(int i = 1; i <= 8; i++) {
+            if(((BufferedImage) image).getRGB((int)D[i].x, (int)D[i].y) == Color.black.getRGB()) {
+                ((BufferedImage) image).setRGB((int)D[i].x, (int)D[i].y, Color.GREEN.getRGB());
+                return D[i];
+            }
+        }
+        return null;
     }
 
     private static List<Minutiae> getFalseMinutiaes(List<Minutiae> minutiaes, int width, int height, Image imageFromLines, Image result) {
@@ -254,6 +297,7 @@ public class FingerPrintsRecognizer implements Recognizer {
                 if (!minutiae1.equals(minutiae2) && minutiae1.getType().equals(MinutiaeTypeEnum.ENDING_POINT.getCode()) &&
                     (minutiae2.getType().equals(MinutiaeTypeEnum.BIFURCATION_POINT.getCode()) || minutiae2.getType().equals(MinutiaeTypeEnum.CROSSING_POINT.getCode()))) {
                     double distance = Math.sqrt(Math.pow(minutiae2.getX() - minutiae1.getX(), 2) + Math.pow(minutiae2.getY() - minutiae1.getY(), 2));
+                    //TODO uzaleznic od odleglosci miedzy liniami
                     if (distance < 3) {
                         minutiaesToRemove.add(minutiae1);
                         minutiaesToRemove.add(minutiae2);
@@ -267,6 +311,7 @@ public class FingerPrintsRecognizer implements Recognizer {
                 if (!minutiae1.equals(minutiae2) && minutiae1.getType().equals(MinutiaeTypeEnum.ENDING_POINT.getCode()) &&
                     (minutiae2.getType().equals(MinutiaeTypeEnum.ENDING_POINT.getCode()))) {
                     double distance = Math.sqrt(Math.pow(minutiae2.getX() - minutiae1.getX(), 2) + Math.pow(minutiae2.getY() - minutiae1.getY(), 2));
+                    //TODO uzaleznic od odleglosci miedzy liniami
                     if (distance < 5) {
                         minutiaesToRemove.add(minutiae1);
                         minutiaesToRemove.add(minutiae2);
@@ -280,6 +325,7 @@ public class FingerPrintsRecognizer implements Recognizer {
                 if (!minutiae1.equals(minutiae2) && minutiae1.getType().equals(MinutiaeTypeEnum.BIFURCATION_POINT.getCode()) &&
                     (minutiae2.getType().equals(MinutiaeTypeEnum.BIFURCATION_POINT.getCode()))) {
                     double distance = Math.sqrt(Math.pow(minutiae2.getX() - minutiae1.getX(), 2) + Math.pow(minutiae2.getY() - minutiae1.getY(), 2));
+                    //TODO uzaleznic od odleglosci miedzy liniami
                     if (distance < 5) {
                         minutiaesToRemove.add(minutiae1);
                         minutiaesToRemove.add(minutiae2);

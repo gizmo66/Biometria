@@ -16,5 +16,6 @@ public class Minutiae extends Entity {
 
     int x;
     int y;
+    double angle;
     String type;
 }

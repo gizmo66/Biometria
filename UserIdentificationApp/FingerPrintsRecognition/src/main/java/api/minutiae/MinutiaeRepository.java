@@ -25,6 +25,7 @@ public class MinutiaeRepository {
         sql.append(minutiaeSetId).append(", ");
         sql.append(minutiae.getX()).append(", ");
         sql.append(minutiae.getY()).append(", ");
+        sql.append(minutiae.getAngle()).append(", ");
         sql.append(" '").append(minutiae.getType()).append("') ");
 
         databaseHelper.executeUpdate(sql.toString());
