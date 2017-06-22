@@ -139,6 +139,15 @@ public class FingerPrintsRecognizer implements Recognizer {
         markFalseMinutiaesOnImage(minutiaesToRemove, (BufferedImage) imageWithFalseMinutiaes);
         displayImage(upscaleImage((BufferedImage) imageWithFalseMinutiaes, 2), 5, "False minutiaes");
 
+        setMinutiaesAnglesAndMarkMinutiaesOnImage((BufferedImage) imageWithValidMinutiaesOnly, tempImageForEndingPointAngleCalculations, minutiaeSet);
+
+        displayImage(upscaleImage((BufferedImage) tempImageForEndingPointAngleCalculations, 2), 6, "Angle calculations");
+        displayImage(upscaleImage((BufferedImage) imageWithValidMinutiaesOnly, 2), 7, "Valid minutiaes");
+        return minutiaeSet;
+    }
+
+    private static void setMinutiaesAnglesAndMarkMinutiaesOnImage(BufferedImage imageWithValidMinutiaesOnly, Image tempImageForEndingPointAngleCalculations,
+                                                                  MinutiaeSet minutiaeSet) {
         for (Minutiae minutiae : minutiaeSet.getMinutiaeList()) {
             int w = minutiae.getX();
             int h = minutiae.getY();
@@ -157,28 +166,24 @@ public class FingerPrintsRecognizer implements Recognizer {
 
                 rgb = Color.MAGENTA.getRGB();
             }
-            drawOval((BufferedImage) imageWithValidMinutiaesOnly, w, h, rgb);
+            drawOval(imageWithValidMinutiaesOnly, w, h, rgb);
         }
-
-        displayImage(upscaleImage((BufferedImage) tempImageForEndingPointAngleCalculations, 2), 6, "Angle calculations");
-        displayImage(upscaleImage((BufferedImage) imageWithValidMinutiaesOnly, 2), 7, "Valid minutiaes");
-        return minutiaeSet;
     }
 
-    private static double getEndingPointAngle(Image temp, int w, int h) {
-        ((BufferedImage) temp).setRGB(w, h, Color.GREEN.getRGB());
-        Double current = getNeighbourOnLineWithColorAndSetToColor(temp, w, h, Color.black, Color.green);
+    private static double getEndingPointAngle(Image tempImage, int w, int h) {
+        ((BufferedImage) tempImage).setRGB(w, h, Color.GREEN.getRGB());
+        Double current = getNeighbourOnLineWithColorAndSetToColor(tempImage, w, h, Color.black, Color.green);
         for (int i = 0; i < 3; i++) {
-            current = getNeighbourOnLineWithColorAndSetToColor(temp, (int) current.x, (int) current.y, Color.black, Color.green);
+            current = getNeighbourOnLineWithColorAndSetToColor(tempImage, (int) current.x, (int) current.y, Color.black, Color.green);
         }
         return getAngleOfLineBetweenTwoPoints(new Double(w, h), current);
     }
 
-    private static void markFalseMinutiaesOnImage(List<Minutiae> minutiaesToRemove, BufferedImage result1) {
+    private static void markFalseMinutiaesOnImage(List<Minutiae> minutiaesToRemove, BufferedImage image) {
         for(Minutiae minutiae : minutiaesToRemove) {
             int w = minutiae.getX();
             int h = minutiae.getY();
-            drawOval(result1, w, h, Color.RED.getRGB());
+            drawOval(image, w, h, Color.RED.getRGB());
         }
     }
 
@@ -223,15 +228,15 @@ public class FingerPrintsRecognizer implements Recognizer {
         return minutiaes;
     }
 
-    private static void drawOval(BufferedImage result1, int w, int h, int rgb) {
-        result1.setRGB(w + 1, h - 1, rgb);
-        result1.setRGB(w - 1, h - 1, rgb);
-        result1.setRGB(w - 1, h + 1, rgb);
-        result1.setRGB(w + 1, h + 1, rgb);
-        result1.setRGB(w, h + 2, rgb);
-        result1.setRGB(w, h - 2, rgb);
-        result1.setRGB(w - 2, h, rgb);
-        result1.setRGB(w + 2, h, rgb);
+    private static void drawOval(BufferedImage image, int w, int h, int rgb) {
+        image.setRGB(w + 1, h - 1, rgb);
+        image.setRGB(w - 1, h - 1, rgb);
+        image.setRGB(w - 1, h + 1, rgb);
+        image.setRGB(w + 1, h + 1, rgb);
+        image.setRGB(w, h + 2, rgb);
+        image.setRGB(w, h - 2, rgb);
+        image.setRGB(w - 2, h, rgb);
+        image.setRGB(w + 2, h, rgb);
     }
 
     private static Double getNeighbourOnLineWithColorAndSetToColor(Image image, int w, int h, Color neighbourColor, Color newColor) {
@@ -265,11 +270,11 @@ public class FingerPrintsRecognizer implements Recognizer {
     }
 
     private static List<Minutiae> getMinutiaesThatAreInOpenWayToTheBorders(List<Minutiae> minutiaes, int width, int height, BufferedImage imageFromLines,
-                                                                           BufferedImage resultImage) {
+                                                                           BufferedImage image) {
         List<Minutiae> result = new ArrayList<>();
         for (Minutiae minutiae1 : minutiaes) {
             for (int i = minutiae1.getX() - 1; i > 0; i--) {
-                //((BufferedImage) resultImage).setRGB(i, minutiae1.getY(), Color.yellow.getRGB());
+                //((BufferedImage) image).setRGB(i, minutiae1.getY(), Color.yellow.getRGB());
                 if (imageFromLines.getRGB(i, minutiae1.getY()) == Color.black.getRGB()) {
                     break;
                 } else if (i == 1) {
@@ -278,7 +283,7 @@ public class FingerPrintsRecognizer implements Recognizer {
             }
 
             for (int i = minutiae1.getX() + 1; i < width; i++) {
-                //((BufferedImage) resultImage).setRGB(i, minutiae1.getY(), Color.yellow.getRGB());
+                //((BufferedImage) image).setRGB(i, minutiae1.getY(), Color.yellow.getRGB());
                 if (imageFromLines.getRGB(i, minutiae1.getY()) == Color.black.getRGB()) {
                     break;
                 } else if (i == width - 1) {
@@ -287,7 +292,7 @@ public class FingerPrintsRecognizer implements Recognizer {
             }
 
             for (int i = minutiae1.getY() - 1; i > 0; i--) {
-                //((BufferedImage) resultImage).setRGB(minutiae1.getX(), i, Color.yellow.getRGB());
+                //((BufferedImage) image).setRGB(minutiae1.getX(), i, Color.yellow.getRGB());
                 if (imageFromLines.getRGB(minutiae1.getX(), i) == Color.black.getRGB()) {
                     break;
                 } else if (i == 1) {
@@ -296,7 +301,7 @@ public class FingerPrintsRecognizer implements Recognizer {
             }
 
             for (int i = minutiae1.getY() + 1; i < height; i++) {
-                //((BufferedImage) resultImage).setRGB(minutiae1.getX(), i, Color.yellow.getRGB());
+                //((BufferedImage) image).setRGB(minutiae1.getX(), i, Color.yellow.getRGB());
                 if (imageFromLines.getRGB(minutiae1.getX(), i) == Color.black.getRGB()) {
                     break;
                 } else if (i == height - 1) {
