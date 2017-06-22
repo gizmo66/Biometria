@@ -112,101 +112,43 @@ public class FingerPrintsRecognizer implements Recognizer {
     }
 
     public static MinutiaeSet extractMinutiaeSetFromImage(Image imageFromLines) {
-        MinutiaeSet minutiaeSet = new MinutiaeSet();
-
         int height = ((BufferedImage) imageFromLines).getHeight();
         int width = ((BufferedImage) imageFromLines).getWidth();
 
-        Image result = new BufferedImage(width, height, BufferedImage.TYPE_3BYTE_BGR);
+        Image imageWithValidMinutiaesOnly = new BufferedImage(width, height, BufferedImage.TYPE_3BYTE_BGR);
+        Image imageWithFalseMinutiaes = new BufferedImage(width, height, BufferedImage.TYPE_3BYTE_BGR);
+        Image tempImageForEndingPointAngleCalculations = new BufferedImage(width, height, BufferedImage.TYPE_3BYTE_BGR);
 
         for (int h = 0; h < height; h++) {
             for (int w = 0; w < width; w++) {
-                ((BufferedImage) result).setRGB(w, h, ((BufferedImage) imageFromLines).getRGB(w, h));
+                ((BufferedImage) imageWithValidMinutiaesOnly).setRGB(w, h, ((BufferedImage) imageFromLines).getRGB(w, h));
+                ((BufferedImage) imageWithFalseMinutiaes).setRGB(w, h, ((BufferedImage) imageFromLines).getRGB(w, h));
+                ((BufferedImage) tempImageForEndingPointAngleCalculations).setRGB(w, h, ((BufferedImage) imageFromLines).getRGB(w, h));
             }
         }
 
         displayImage(upscaleImage((BufferedImage) imageFromLines, 2), 4, "");
 
-        for (int h = 2; h < height - 2; h++) {
-            for (int w = 2; w < width - 2; w++) {
+        List<Minutiae> minutiaes = getAllMinutiaesFromImage(imageFromLines);
+        List<Minutiae> minutiaesToRemove = getFalseMinutiaes(minutiaes, width, height, imageFromLines, imageWithValidMinutiaesOnly);
+        minutiaes.removeAll(minutiaesToRemove);
 
-                if (getBinary(imageFromLines, w, h) == 1) {
-                    double CN = 0;
+        MinutiaeSet minutiaeSet = new MinutiaeSet();
+        minutiaeSet.setMinutiaeList(minutiaes);
 
-                    int[] P = new int[10];
+        markFalseMinutiaesOnImage(minutiaesToRemove, (BufferedImage) imageWithFalseMinutiaes);
+        displayImage(upscaleImage((BufferedImage) imageWithFalseMinutiaes, 2), 5, "False minutiaes");
 
-                    P[1] = getBinary(imageFromLines, w+1, h);
-                    P[2] = getBinary(imageFromLines, w+1, h-1);
-                    P[3] = getBinary(imageFromLines, w, h-1);
-                    P[4] = getBinary(imageFromLines, w-1, h-1);
-                    P[5] = getBinary(imageFromLines, w-1, h);
-                    P[6] = getBinary(imageFromLines, w-1, h+1);
-                    P[7] = getBinary(imageFromLines, w, h+1);
-                    P[8] = getBinary(imageFromLines, w+1, h+1);
-                    P[9] = P[1];
-
-                    for(int i = 1; i <= 8; i++) {
-                        CN += Math.abs(P[i] - P[i+1]);
-                    }
-                    CN = CN * 0.5;
-
-                    if (CN == Math.ceil(CN) && (CN == 1 || CN >= 3)) {
-                        Minutiae minutiae1 = new Minutiae();
-                        minutiae1.setX(w);
-                        minutiae1.setY(h);
-                        minutiae1.setType(MinutiaeTypeEnum.getByCN((int) CN).getCode());
-                        minutiaeSet.getMinutiaeList().add(minutiae1);
-                    }
-                }
-            }
-        }
-
-        List<Minutiae> minutiaesToRemove = getFalseMinutiaes(minutiaeSet.getMinutiaeList(), width, height, imageFromLines, result);
-        minutiaeSet.getMinutiaeList().removeAll(minutiaesToRemove);
-
-        Image result1 = new BufferedImage(width, height, BufferedImage.TYPE_3BYTE_BGR);
-
-        for (int h = 0; h < height; h++) {
-            for (int w = 0; w < width; w++) {
-                ((BufferedImage) result1).setRGB(w, h, ((BufferedImage) imageFromLines).getRGB(w, h));
-            }
-        }
-
-        for(Minutiae minutiae : minutiaesToRemove) {
-            int w = minutiae.getX();
-            int h = minutiae.getY();
-
-            int rgb = Color.RED.getRGB();
-
-            ((BufferedImage) result1).setRGB(w+1, h-1, rgb);
-            ((BufferedImage) result1).setRGB(w-1, h-1, rgb);
-            ((BufferedImage) result1).setRGB(w-1, h+1, rgb);
-            ((BufferedImage) result1).setRGB(w+1, h+1, rgb);
-            ((BufferedImage) result1).setRGB(w, h+2, rgb);
-            ((BufferedImage) result1).setRGB(w, h-2, rgb);
-            ((BufferedImage) result1).setRGB(w-2, h, rgb);
-            ((BufferedImage) result1).setRGB(w+2, h, rgb);
-        }
-
-        displayImage(upscaleImage((BufferedImage) result1, 2), 5, "");
-
-        for(Minutiae minutiae : minutiaeSet.getMinutiaeList()) {
+        for (Minutiae minutiae : minutiaeSet.getMinutiaeList()) {
             int w = minutiae.getX();
             int h = minutiae.getY();
             int CN = MinutiaeTypeEnum.getByCode(minutiae.getType()).getCN();
 
             int rgb = Color.YELLOW.getRGB();
-            if(CN == 1) {
+            if (CN == 1) {
                 rgb = Color.BLUE.getRGB();
-
-                ((BufferedImage) result).setRGB(w, h, Color.GREEN.getRGB());
-                Double current = getNeighbour(result, w, h);
-                for(int i = 0; i < 5; i++) {
-                    current = getNeighbour(result, (int)current.x, (int)current.y);
-                }
-                minutiae.setAngle(getAngleOfLineBetweenTwoPoints(new Double(w, h), current));
-
-            } else if (CN == 3){
+                minutiae.setAngle(getEndingPointAngle(tempImageForEndingPointAngleCalculations, w, h));
+            } else if (CN == 3) {
                 //TODO obliczyc kat
 
                 rgb = Color.CYAN.getRGB();
@@ -215,22 +157,84 @@ public class FingerPrintsRecognizer implements Recognizer {
 
                 rgb = Color.MAGENTA.getRGB();
             }
-
-            ((BufferedImage) result).setRGB(w+1, h-1, rgb);
-            ((BufferedImage) result).setRGB(w-1, h-1, rgb);
-            ((BufferedImage) result).setRGB(w-1, h+1, rgb);
-            ((BufferedImage) result).setRGB(w+1, h+1, rgb);
-            ((BufferedImage) result).setRGB(w, h+2, rgb);
-            ((BufferedImage) result).setRGB(w, h-2, rgb);
-            ((BufferedImage) result).setRGB(w-2, h, rgb);
-            ((BufferedImage) result).setRGB(w+2, h, rgb);
+            drawOval((BufferedImage) imageWithValidMinutiaesOnly, w, h, rgb);
         }
 
-        displayImage(upscaleImage((BufferedImage) result, 2), 6, "");
+        displayImage(upscaleImage((BufferedImage) tempImageForEndingPointAngleCalculations, 2), 6, "Angle calculations");
+        displayImage(upscaleImage((BufferedImage) imageWithValidMinutiaesOnly, 2), 7, "Valid minutiaes");
         return minutiaeSet;
     }
 
-    private static Double getNeighbour(Image image, int w, int h) {
+    private static double getEndingPointAngle(Image temp, int w, int h) {
+        ((BufferedImage) temp).setRGB(w, h, Color.GREEN.getRGB());
+        Double current = getNeighbourOnLineWithColorAndSetToColor(temp, w, h, Color.black, Color.green);
+        for (int i = 0; i < 3; i++) {
+            current = getNeighbourOnLineWithColorAndSetToColor(temp, (int) current.x, (int) current.y, Color.black, Color.green);
+        }
+        return getAngleOfLineBetweenTwoPoints(new Double(w, h), current);
+    }
+
+    private static void markFalseMinutiaesOnImage(List<Minutiae> minutiaesToRemove, BufferedImage result1) {
+        for(Minutiae minutiae : minutiaesToRemove) {
+            int w = minutiae.getX();
+            int h = minutiae.getY();
+            drawOval(result1, w, h, Color.RED.getRGB());
+        }
+    }
+
+    private static List<Minutiae> getAllMinutiaesFromImage(Image image) {
+        int height = ((BufferedImage) image).getHeight();
+        int width = ((BufferedImage) image).getWidth();
+
+        List<Minutiae> minutiaes = new ArrayList<>();
+        for (int h = 2; h < height - 2; h++) {
+            for (int w = 2; w < width - 2; w++) {
+
+                if (getBinaryValueOfTheColor(image, w, h) == 1) {
+                    double CN = 0;
+
+                    int[] P = new int[10];
+
+                    P[1] = getBinaryValueOfTheColor(image, w + 1, h);
+                    P[2] = getBinaryValueOfTheColor(image, w + 1, h - 1);
+                    P[3] = getBinaryValueOfTheColor(image, w, h - 1);
+                    P[4] = getBinaryValueOfTheColor(image, w - 1, h - 1);
+                    P[5] = getBinaryValueOfTheColor(image, w - 1, h);
+                    P[6] = getBinaryValueOfTheColor(image, w - 1, h + 1);
+                    P[7] = getBinaryValueOfTheColor(image, w, h + 1);
+                    P[8] = getBinaryValueOfTheColor(image, w + 1, h + 1);
+                    P[9] = P[1];
+
+                    for (int i = 1; i <= 8; i++) {
+                        CN += Math.abs(P[i] - P[i + 1]);
+                    }
+                    CN = CN * 0.5;
+
+                    if (CN == Math.ceil(CN) && (CN == 1 || CN >= 3)) {
+                        Minutiae minutiae1 = new Minutiae();
+                        minutiae1.setX(w);
+                        minutiae1.setY(h);
+                        minutiae1.setType(MinutiaeTypeEnum.getByCN((int) CN).getCode());
+                        minutiaes.add(minutiae1);
+                    }
+                }
+            }
+        }
+        return minutiaes;
+    }
+
+    private static void drawOval(BufferedImage result1, int w, int h, int rgb) {
+        result1.setRGB(w + 1, h - 1, rgb);
+        result1.setRGB(w - 1, h - 1, rgb);
+        result1.setRGB(w - 1, h + 1, rgb);
+        result1.setRGB(w + 1, h + 1, rgb);
+        result1.setRGB(w, h + 2, rgb);
+        result1.setRGB(w, h - 2, rgb);
+        result1.setRGB(w - 2, h, rgb);
+        result1.setRGB(w + 2, h, rgb);
+    }
+
+    private static Double getNeighbourOnLineWithColorAndSetToColor(Image image, int w, int h, Color neighbourColor, Color newColor) {
         Double[] D = new Double[9];
 
         D[1] = new Double(w+1, h);
@@ -243,8 +247,8 @@ public class FingerPrintsRecognizer implements Recognizer {
         D[8] = new Double(w+1, h+1);
 
         for(int i = 1; i <= 8; i++) {
-            if(((BufferedImage) image).getRGB((int)D[i].x, (int)D[i].y) == Color.black.getRGB()) {
-                ((BufferedImage) image).setRGB((int)D[i].x, (int)D[i].y, Color.GREEN.getRGB());
+            if(((BufferedImage) image).getRGB((int)D[i].x, (int)D[i].y) == neighbourColor.getRGB()) {
+                ((BufferedImage) image).setRGB((int)D[i].x, (int)D[i].y, newColor.getRGB());
                 return D[i];
             }
         }
@@ -252,46 +256,59 @@ public class FingerPrintsRecognizer implements Recognizer {
     }
 
     private static List<Minutiae> getFalseMinutiaes(List<Minutiae> minutiaes, int width, int height, Image imageFromLines, Image result) {
-        List<Minutiae> minutiaesToRemove = new ArrayList<>();
+        List<Minutiae> falseMinutiaes = new ArrayList<>();
+        falseMinutiaes.addAll(getMinutiaesThatAreInOpenWayToTheBorders(minutiaes, width, height, (BufferedImage) imageFromLines, (BufferedImage) result));
+        falseMinutiaes.addAll(getEndingPointsAndBifurcationPointsGeneratedBySmallTicksOnTheMiddleOfTheLines(minutiaes));
+        falseMinutiaes.addAll(getEndingPointsGeneratedByDividedLines(minutiaes));
+        falseMinutiaes.addAll(getBifurcationPointsToCloseToEachOther(minutiaes));
+        return falseMinutiaes;
+    }
 
+    private static List<Minutiae> getMinutiaesThatAreInOpenWayToTheBorders(List<Minutiae> minutiaes, int width, int height, BufferedImage imageFromLines,
+                                                                           BufferedImage resultImage) {
+        List<Minutiae> result = new ArrayList<>();
         for (Minutiae minutiae1 : minutiaes) {
             for (int i = minutiae1.getX() - 1; i > 0; i--) {
-                //((BufferedImage) result).setRGB(i, minutiae1.getY(), Color.yellow.getRGB());
-                if (((BufferedImage) imageFromLines).getRGB(i, minutiae1.getY()) == Color.black.getRGB()) {
+                //((BufferedImage) resultImage).setRGB(i, minutiae1.getY(), Color.yellow.getRGB());
+                if (imageFromLines.getRGB(i, minutiae1.getY()) == Color.black.getRGB()) {
                     break;
                 } else if (i == 1) {
-                    minutiaesToRemove.add(minutiae1);
+                    result.add(minutiae1);
                 }
             }
 
             for (int i = minutiae1.getX() + 1; i < width; i++) {
-                //((BufferedImage) result).setRGB(i, minutiae1.getY(), Color.yellow.getRGB());
-                if (((BufferedImage) imageFromLines).getRGB(i, minutiae1.getY()) == Color.black.getRGB()) {
+                //((BufferedImage) resultImage).setRGB(i, minutiae1.getY(), Color.yellow.getRGB());
+                if (imageFromLines.getRGB(i, minutiae1.getY()) == Color.black.getRGB()) {
                     break;
                 } else if (i == width - 1) {
-                    minutiaesToRemove.add(minutiae1);
+                    result.add(minutiae1);
                 }
             }
 
             for (int i = minutiae1.getY() - 1; i > 0; i--) {
-                //((BufferedImage) result).setRGB(minutiae1.getX(), i, Color.yellow.getRGB());
-                if (((BufferedImage) imageFromLines).getRGB(minutiae1.getX(), i) == Color.black.getRGB()) {
+                //((BufferedImage) resultImage).setRGB(minutiae1.getX(), i, Color.yellow.getRGB());
+                if (imageFromLines.getRGB(minutiae1.getX(), i) == Color.black.getRGB()) {
                     break;
                 } else if (i == 1) {
-                    minutiaesToRemove.add(minutiae1);
+                    result.add(minutiae1);
                 }
             }
 
             for (int i = minutiae1.getY() + 1; i < height; i++) {
-                //((BufferedImage) result).setRGB(minutiae1.getX(), i, Color.yellow.getRGB());
-                if (((BufferedImage) imageFromLines).getRGB(minutiae1.getX(), i) == Color.black.getRGB()) {
+                //((BufferedImage) resultImage).setRGB(minutiae1.getX(), i, Color.yellow.getRGB());
+                if (imageFromLines.getRGB(minutiae1.getX(), i) == Color.black.getRGB()) {
                     break;
                 } else if (i == height - 1) {
-                    minutiaesToRemove.add(minutiae1);
+                    result.add(minutiae1);
                 }
             }
         }
+        return result;
+    }
 
+    private static List<Minutiae> getEndingPointsAndBifurcationPointsGeneratedBySmallTicksOnTheMiddleOfTheLines(List<Minutiae> minutiaes) {
+        List<Minutiae> result = new ArrayList<>();
         for (Minutiae minutiae1 : minutiaes) {
             for (Minutiae minutiae2 : minutiaes) {
                 if (!minutiae1.equals(minutiae2) && minutiae1.getType().equals(MinutiaeTypeEnum.ENDING_POINT.getCode()) &&
@@ -299,13 +316,17 @@ public class FingerPrintsRecognizer implements Recognizer {
                     double distance = Math.sqrt(Math.pow(minutiae2.getX() - minutiae1.getX(), 2) + Math.pow(minutiae2.getY() - minutiae1.getY(), 2));
                     //TODO uzaleznic od odleglosci miedzy liniami
                     if (distance < 3) {
-                        minutiaesToRemove.add(minutiae1);
-                        minutiaesToRemove.add(minutiae2);
+                        result.add(minutiae1);
+                        result.add(minutiae2);
                     }
                 }
             }
         }
+        return result;
+    }
 
+    private static List<Minutiae> getEndingPointsGeneratedByDividedLines(List<Minutiae> minutiaes) {
+        List<Minutiae> result = new ArrayList<>();
         for (Minutiae minutiae1 : minutiaes) {
             for (Minutiae minutiae2 : minutiaes) {
                 if (!minutiae1.equals(minutiae2) && minutiae1.getType().equals(MinutiaeTypeEnum.ENDING_POINT.getCode()) &&
@@ -313,13 +334,17 @@ public class FingerPrintsRecognizer implements Recognizer {
                     double distance = Math.sqrt(Math.pow(minutiae2.getX() - minutiae1.getX(), 2) + Math.pow(minutiae2.getY() - minutiae1.getY(), 2));
                     //TODO uzaleznic od odleglosci miedzy liniami
                     if (distance < 5) {
-                        minutiaesToRemove.add(minutiae1);
-                        minutiaesToRemove.add(minutiae2);
+                        result.add(minutiae1);
+                        result.add(minutiae2);
                     }
                 }
             }
         }
+        return result;
+    }
 
+    private static List<Minutiae> getBifurcationPointsToCloseToEachOther(List<Minutiae> minutiaes) {
+        List<Minutiae> result = new ArrayList<>();
         for (Minutiae minutiae1 : minutiaes) {
             for (Minutiae minutiae2 : minutiaes) {
                 if (!minutiae1.equals(minutiae2) && minutiae1.getType().equals(MinutiaeTypeEnum.BIFURCATION_POINT.getCode()) &&
@@ -327,16 +352,16 @@ public class FingerPrintsRecognizer implements Recognizer {
                     double distance = Math.sqrt(Math.pow(minutiae2.getX() - minutiae1.getX(), 2) + Math.pow(minutiae2.getY() - minutiae1.getY(), 2));
                     //TODO uzaleznic od odleglosci miedzy liniami
                     if (distance < 5) {
-                        minutiaesToRemove.add(minutiae1);
-                        minutiaesToRemove.add(minutiae2);
+                        result.add(minutiae1);
+                        result.add(minutiae2);
                     }
                 }
             }
         }
-        return minutiaesToRemove;
+        return result;
     }
 
-    public static int getBinary(Image image, int w, int h) {
+    public static int getBinaryValueOfTheColor(Image image, int w, int h) {
         Color p = new Color(((BufferedImage) image).getRGB(w, h));
         if(p.getRGB() == Color.BLACK.getRGB()) {
             return 1;
@@ -350,11 +375,11 @@ public class FingerPrintsRecognizer implements Recognizer {
 
     public static void displayImage(Image img, int iteration, String windowName) {
         ImageIcon icon = new ImageIcon(img);
-        int x = WINDOW_POS_X + 380 * iteration;
+        int x = WINDOW_POS_X + 300 * iteration;
         int y = WINDOW_POS_Y;
 
-        if(iteration > 2) {
-            x = WINDOW_POS_X + 380 * (iteration - 3);
+        if(iteration > 3) {
+            x = WINDOW_POS_X + 300 * (iteration - 4);
             y = WINDOW_POS_Y + 320;
         }
 
