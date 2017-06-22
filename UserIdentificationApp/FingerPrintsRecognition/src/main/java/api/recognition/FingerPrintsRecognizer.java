@@ -133,22 +133,21 @@ public class FingerPrintsRecognizer implements Recognizer {
         List<Minutiae> minutiaesToRemove = getFalseMinutiaes(minutiaes, width, height, imageFromLines, imageWithValidMinutiaesOnly);
         minutiaes.removeAll(minutiaesToRemove);
 
-        MinutiaeSet minutiaeSet = new MinutiaeSet();
-        minutiaeSet.setMinutiaeList(minutiaes);
-
         markFalseMinutiaesOnImage(minutiaesToRemove, (BufferedImage) imageWithFalseMinutiaes);
         displayImage(upscaleImage((BufferedImage) imageWithFalseMinutiaes, 2), 5, "False minutiaes");
 
-        setMinutiaesAnglesAndMarkMinutiaesOnImage((BufferedImage) imageWithValidMinutiaesOnly, tempImageForEndingPointAngleCalculations, minutiaeSet);
-
+        setMinutiaesAnglesAndMarkMinutiaesOnImage((BufferedImage) imageWithValidMinutiaesOnly, tempImageForEndingPointAngleCalculations, minutiaes);
         displayImage(upscaleImage((BufferedImage) tempImageForEndingPointAngleCalculations, 2), 6, "Angle calculations");
         displayImage(upscaleImage((BufferedImage) imageWithValidMinutiaesOnly, 2), 7, "Valid minutiaes");
+
+        MinutiaeSet minutiaeSet = new MinutiaeSet();
+        minutiaeSet.setMinutiaeList(minutiaes);
         return minutiaeSet;
     }
 
     private static void setMinutiaesAnglesAndMarkMinutiaesOnImage(BufferedImage imageWithValidMinutiaesOnly, Image tempImageForEndingPointAngleCalculations,
-                                                                  MinutiaeSet minutiaeSet) {
-        for (Minutiae minutiae : minutiaeSet.getMinutiaeList()) {
+                                                                  List<Minutiae> minutiaes) {
+        for (Minutiae minutiae : minutiaes) {
             int w = minutiae.getX();
             int h = minutiae.getY();
             int CN = MinutiaeTypeEnum.getByCode(minutiae.getType()).getCN();
