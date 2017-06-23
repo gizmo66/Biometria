@@ -87,16 +87,7 @@ public class FingerPrintsRecognizer implements Recognizer {
         displayImage(upscaleImage((BufferedImage) stretchedHistogramImage, 1.5), ++displayIteration, "Stretched histogram");
 
         Image binaryImage = convertToBinary(stretchedHistogramImage);
-
-        int height = ((BufferedImage) binaryImage).getHeight();
-        int width = ((BufferedImage) binaryImage).getWidth();
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                if (y == 0 || y == height - 1 || x == 0 || x == width - 1) {
-                    ((BufferedImage) binaryImage).setRGB(x, y, Color.white.getRGB());
-                }
-            }
-        }
+        cleanBorders((BufferedImage) binaryImage);
 
         displayImage(upscaleImage((BufferedImage) binaryImage, 1.5), ++displayIteration, "Black and white image");
 
@@ -104,6 +95,18 @@ public class FingerPrintsRecognizer implements Recognizer {
         displayImage(upscaleImage((BufferedImage) binaryImageWithRegions, 1.5), ++displayIteration, "Marked bad regions");
 
         return ImageProcessingUtils.skeletonize(binaryImage);
+    }
+
+    private void cleanBorders(BufferedImage binaryImage) {
+        int height = binaryImage.getHeight();
+        int width = binaryImage.getWidth();
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                if (y == 0 || y == height - 1 || x == 0 || x == width - 1) {
+                    binaryImage.setRGB(x, y, Color.white.getRGB());
+                }
+            }
+        }
     }
 
     private Image markBadRegions(Image binaryImage) {
@@ -151,13 +154,12 @@ public class FingerPrintsRecognizer implements Recognizer {
     }
 
     private boolean compareMinutiaeSets(MinutiaeSet minutiaeSet, MinutiaeSet minutiaeSet1) {
-        //TODO: porównać oba zbiory minucji (znależć najlepsze dopasowanie i sprawdzić czy zgadza się typ minucji (CN))
+        //TODO: porównać oba zbiory minucji (znaleźć najlepsze dopasowanie i sprawdzić czy zgadza się typ minucji i orientacja)
         return true;
     }
 
     public static double getAngleOfLineBetweenTwoPoints(Point.Double p1, Point.Double p2) {
         double angle = Math.toDegrees(Math.atan2(p2.y - p1.y, p2.x - p1.x));
-
         if (angle < 0) {
             angle += 360;
         }
@@ -198,8 +200,7 @@ public class FingerPrintsRecognizer implements Recognizer {
         displayImage(upscaleImage((BufferedImage) imageWithFalseMinutiaes, 2), 6, "False minutiaes");
 
         markMinutiaesOnImage((BufferedImage) imageWithValidMinutiaesOnly, tempImageForEndingPointAngleCalculations, minutiaes);
-        displayImage(upscaleImage((BufferedImage) tempImageForEndingPointAngleCalculations, 2), 7, "Angle calculations");
-        displayImage(upscaleImage((BufferedImage) imageWithValidMinutiaesOnly, 2), 8, "Valid minutiaes");
+        displayImage(upscaleImage((BufferedImage) imageWithValidMinutiaesOnly, 2), 7, "Valid minutiaes");
 
         MinutiaeSet minutiaeSet = new MinutiaeSet();
         minutiaeSet.setMinutiaeList(minutiaes);
@@ -226,16 +227,20 @@ public class FingerPrintsRecognizer implements Recognizer {
 
     private static double getEndingPointAngle(Image tempImage, int w, int h) {
         ((BufferedImage) tempImage).setRGB(w, h, Color.GREEN.getRGB());
+        List<Point2D> points = new ArrayList<>();
         Double neighbour = getNeighbourOnLineWithColorAndSetToColor(tempImage, w, h, Color.black, Color.green);
+        points.add(new Double(w,h));
         Double current = neighbour;
-
+        points.add(new Double(current.x,current.y));
         double sum = 0;
         for (int i = 0; i < 5; i++) {
             current = getNeighbourOnLineWithColorAndSetToColor(tempImage, (int) current.x, (int) current.y, Color.black, Color.green);
             if (i > 1) {
                 sum += getAngleOfLineBetweenTwoPoints(neighbour, current);
             }
+            points.add(new Double(current.x,current.y));
         }
+        points.forEach(p -> ((BufferedImage) tempImage).setRGB((int)p.getX(), (int)p.getY(), Color.black.getRGB()));
         return sum / 5;
     }
 
@@ -282,6 +287,10 @@ public class FingerPrintsRecognizer implements Recognizer {
 
                         if (CN == 1) {
                             minutiae1.setAngle(getEndingPointAngle(tempImageForEndingPointAngleCalculations, w, h));
+                        } else if (CN == 3) {
+                            minutiae1.setAngle(getBifurcationPointAngle(tempImageForEndingPointAngleCalculations, w, h));
+                        } else if (CN > 3) {
+
                         }
                         //TODO set angle for other types
 
@@ -292,6 +301,61 @@ public class FingerPrintsRecognizer implements Recognizer {
             }
         }
         return minutiaes;
+    }
+
+    private static double getBifurcationPointAngle(Image tempImageForEndingPointAngleCalculations, int w, int h) {
+        List<Double> neighbours = new ArrayList<>();
+        Double[] D = new Double[9];
+
+        D[1] = new Double(w + 1, h);
+        D[2] = new Double(w + 1, h - 1);
+        D[3] = new Double(w, h - 1);
+        D[4] = new Double(w - 1, h - 1);
+        D[5] = new Double(w - 1, h);
+        D[6] = new Double(w - 1, h + 1);
+        D[7] = new Double(w, h + 1);
+        D[8] = new Double(w + 1, h + 1);
+
+        for (int i = 1; i <= 8; i++) {
+            if (((BufferedImage) tempImageForEndingPointAngleCalculations).getRGB((int) D[i].x, (int) D[i].y) == Color.black.getRGB()) {
+                neighbours.add(D[i]);
+            }
+        }
+
+        List<java.lang.Double> angles = new ArrayList<>();
+        for(Double point : neighbours) {
+            java.lang.Double angle = getEndingPointAngle(tempImageForEndingPointAngleCalculations, (int)point.x, (int)point.y);
+            if (!angles.contains(angle)) {
+                angles.add(angle);
+            }
+        }
+
+        if(angles.size() < 3) {
+            return 0;
+        }
+
+        double min = 360;
+        int a = 0;
+        int b = 0;
+        for(int i = 0; i < 3; i++) {
+            for(int j = 0; j < 3; j++) {
+                if(i != j) {
+                    double diff = Math.abs(angles.get(i) - angles.get(j));
+                    if(diff < min) {
+                        min = diff;
+                        a = i;
+                        b = j;
+                    }
+                }
+            }
+        }
+
+        for(int i = 0; i < 3; i++) {
+            if(i != a && i != b) {
+                return angles.get(i);
+            }
+        }
+        return 0;
     }
 
     private static void drawOval(BufferedImage image, int w, int h, int rgb) {
@@ -384,6 +448,7 @@ public class FingerPrintsRecognizer implements Recognizer {
                 if (!minutiae1.equals(minutiae2) && minutiae1.getType().equals(MinutiaeTypeEnum.ENDING_POINT.getCode()) &&
                     (minutiae2.getType().equals(MinutiaeTypeEnum.BIFURCATION_POINT.getCode()) || minutiae2.getType().equals(MinutiaeTypeEnum.CROSSING_POINT.getCode()))) {
                     double distance = Math.sqrt(Math.pow(minutiae2.getX() - minutiae1.getX(), 2) + Math.pow(minutiae2.getY() - minutiae1.getY(), 2));
+                    //TODO remove if they are neighbours on line
                     if (distance < 5) {
                         result.add(minutiae1);
                         result.add(minutiae2);
@@ -401,7 +466,7 @@ public class FingerPrintsRecognizer implements Recognizer {
                 if (!minutiae1.equals(minutiae2) && minutiae1.getType().equals(MinutiaeTypeEnum.ENDING_POINT.getCode()) &&
                     (minutiae2.getType().equals(MinutiaeTypeEnum.ENDING_POINT.getCode()))) {
                     double distance = Math.sqrt(Math.pow(minutiae2.getX() - minutiae1.getX(), 2) + Math.pow(minutiae2.getY() - minutiae1.getY(), 2));
-                    if (distance < 3) {
+                    if (distance < 5 && Math.abs(minutiae1.getAngle() - minutiae2.getAngle()) - 180 < 40) {
                         result.add(minutiae1);
                         result.add(minutiae2);
                     }
