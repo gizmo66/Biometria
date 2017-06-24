@@ -1,7 +1,6 @@
 package api.recognition;
 
 import api.Recognizer;
-import api.image.ImageProcessingUtils;
 import api.minutiae.MinutiaeTypeEnum;
 import api.user.UserIdentifiedByFingerprintService;
 import api.user.UserServiceImpl;
@@ -11,8 +10,12 @@ import database.model.Minutiae;
 import database.model.MinutiaeSet;
 import database.model.User;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.batik.dom.GenericDOMImplementation;
+import org.apache.batik.svggen.SVGGraphics2D;
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
+import org.w3c.dom.DOMImplementation;
+import org.w3c.dom.Document;
 import view.dialog.FingerPrintRecognitionDialog;
 
 import javax.swing.*;
@@ -21,6 +24,9 @@ import java.awt.geom.Point2D;
 import java.awt.geom.Point2D.Double;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -78,23 +84,52 @@ public class FingerPrintsRecognizer implements Recognizer {
     private Image processImage(Image img) {
         int displayIteration = 0;
         img = upscaleImage((BufferedImage) img, 0.5);
+        saveToSvg(img, "source_image");
         displayImage(upscaleImage((BufferedImage) img, 1.5), displayIteration, "Input image");
 
         Image blackAndWhiteImage = convertToBlackAndWhite(img, 0.7f);
+        saveToSvg(blackAndWhiteImage, "greyscale_image");
         displayImage(upscaleImage((BufferedImage) blackAndWhiteImage, 1.5), ++displayIteration, "Greyscale image");
 
         Image stretchedHistogramImage = stretchHistogram(blackAndWhiteImage);
+        saveToSvg(stretchedHistogramImage, "stretched_histogram_image");
         displayImage(upscaleImage((BufferedImage) stretchedHistogramImage, 1.5), ++displayIteration, "Stretched histogram");
 
         Image binaryImage = convertToBinary(stretchedHistogramImage);
         cleanBorders((BufferedImage) binaryImage);
-
+        saveToSvg(binaryImage, "binary_image");
         displayImage(upscaleImage((BufferedImage) binaryImage, 1.5), ++displayIteration, "Black and white image");
 
         Image binaryImageWithRegions = markBadRegions(binaryImage);
+        saveToSvg(binaryImageWithRegions, "binary_image_with_regions");
         displayImage(upscaleImage((BufferedImage) binaryImageWithRegions, 1.5), ++displayIteration, "Marked bad regions");
 
-        return ImageProcessingUtils.skeletonize(binaryImage);
+        Image skeletonizedImage = skeletonize(binaryImage);
+        saveToSvg(skeletonizedImage, "skeletonized_image");
+        return skeletonizedImage;
+    }
+
+    private static void saveToSvg(Image image, String fileName) {
+        int height = ((BufferedImage) image).getHeight();
+        int width = ((BufferedImage) image).getWidth();
+
+        // Get a DOMImplementation.
+        DOMImplementation domImpl = GenericDOMImplementation.getDOMImplementation();
+
+        // Create an instance of org.w3c.dom.Document.
+        String svgNS = "http://www.w3.org/2000/svg";
+        Document document = domImpl.createDocument(svgNS, "svg", null);
+
+        // Create an instance of the SVG Generator.
+        SVGGraphics2D svgGenerator = new SVGGraphics2D(document);
+        svgGenerator.drawImage(image, 0, 0, width, height, null);
+
+        try {
+            Writer out = new OutputStreamWriter(new FileOutputStream(fileName + ".svg"), "UTF-8");
+            svgGenerator.stream(out, true);
+        } catch (Exception e) {
+            log.error(e.toString());
+        }
     }
 
     private void cleanBorders(BufferedImage binaryImage) {
@@ -185,6 +220,7 @@ public class FingerPrintsRecognizer implements Recognizer {
         displayImage(upscaleImage((BufferedImage) imageFromLines, 2), 5, "Image from lines");
 
         List<Minutiae> minutiaes = getAllMinutiaesFromImage(imageFromLines, tempImageForEndingPointAngleCalculations);
+        saveToSvg(tempImageForEndingPointAngleCalculations, "tempImageForEndingPointAngleCalculations");
         List<Minutiae> minutiaesToRemove = getFalseMinutiaes(minutiaes, width, height, imageFromLines, imageWithValidMinutiaesOnly);
 
         for (Minutiae minutiae : minutiaes) {
@@ -200,6 +236,7 @@ public class FingerPrintsRecognizer implements Recognizer {
         displayImage(upscaleImage((BufferedImage) imageWithFalseMinutiaes, 2), 6, "False minutiaes");
 
         markMinutiaesOnImage((BufferedImage) imageWithValidMinutiaesOnly, tempImageForEndingPointAngleCalculations, minutiaes);
+        saveToSvg(imageWithValidMinutiaesOnly, "image_with_valid_minutiaes_only");
         displayImage(upscaleImage((BufferedImage) imageWithValidMinutiaesOnly, 2), 7, "Valid minutiaes");
 
         MinutiaeSet minutiaeSet = new MinutiaeSet();
@@ -222,6 +259,40 @@ public class FingerPrintsRecognizer implements Recognizer {
                 rgb = Color.MAGENTA.getRGB();
             }
             drawOval(imageWithValidMinutiaesOnly, w, h, rgb);
+            drawAngle(imageWithValidMinutiaesOnly, w, h, minutiae.getAngle(), 5, Color.red.getRGB());
+        }
+    }
+
+    private static void drawAngle(BufferedImage image, int w, int h, double angle, int length, int rgb) {
+        Double currentPixel = new Double(w, h);
+        Double pixelToPaint = new Double(w + 1, h + 1);
+        double farthestAngle = angle >= 180 ? 0 : 360;
+        double lineLength = 0;
+        while (lineLength <= length) {
+            Double[] D = new Double[9];
+
+            D[1] = new Double(currentPixel.x + 1, currentPixel.y);
+            D[2] = new Double(currentPixel.x + 1, currentPixel.y - 1);
+            D[3] = new Double(currentPixel.x, currentPixel.y - 1);
+            D[4] = new Double(currentPixel.x - 1, currentPixel.y - 1);
+            D[5] = new Double(currentPixel.x - 1, currentPixel.y);
+            D[6] = new Double(currentPixel.x - 1, currentPixel.y + 1);
+            D[7] = new Double(currentPixel.x, currentPixel.y + 1);
+            D[8] = new Double(currentPixel.x + 1, currentPixel.y + 1);
+
+            double nearestAngle = farthestAngle;
+            for (int j = 1; j <= 8; j++) {
+                double temp = getAngleOfLineBetweenTwoPoints(new Double(w, h), D[j]);
+                if (Math.abs(temp - angle) <= Math.abs(angle - nearestAngle) && image.getRGB((int) D[j].x, (int) D[j].y) != rgb) {
+                    nearestAngle = temp;
+                    pixelToPaint = D[j];
+                    currentPixel = pixelToPaint;
+                }
+            }
+            if (pixelToPaint.x > 0 && pixelToPaint.x < image.getWidth() && pixelToPaint.y > 0 && pixelToPaint.y < image.getHeight()) {
+                image.setRGB((int) pixelToPaint.x, (int) pixelToPaint.y, rgb);
+                lineLength = distance(w, h, pixelToPaint.x, pixelToPaint.y);
+            }
         }
     }
 
@@ -229,18 +300,16 @@ public class FingerPrintsRecognizer implements Recognizer {
         ((BufferedImage) tempImage).setRGB(w, h, Color.GREEN.getRGB());
         List<Point2D> points = new ArrayList<>();
         Double neighbour = getNeighbourOnLineWithColorAndSetToColor(tempImage, w, h, Color.black, Color.green);
-        points.add(new Double(w,h));
+        points.add(new Double(w, h));
         Double current = neighbour;
-        points.add(new Double(current.x,current.y));
+        points.add(new Double(current.x, current.y));
         double sum = 0;
         for (int i = 0; i < 5; i++) {
             current = getNeighbourOnLineWithColorAndSetToColor(tempImage, (int) current.x, (int) current.y, Color.black, Color.green);
-            if (i > 1) {
-                sum += getAngleOfLineBetweenTwoPoints(neighbour, current);
-            }
-            points.add(new Double(current.x,current.y));
+            sum += getAngleOfLineBetweenTwoPoints(neighbour, current);
+            points.add(new Double(current.x, current.y));
         }
-        points.forEach(p -> ((BufferedImage) tempImage).setRGB((int)p.getX(), (int)p.getY(), Color.black.getRGB()));
+        points.forEach(p -> ((BufferedImage) tempImage).setRGB((int) p.getX(), (int) p.getY(), Color.black.getRGB()));
         return sum / 5;
     }
 
@@ -294,8 +363,10 @@ public class FingerPrintsRecognizer implements Recognizer {
                         }
                         //TODO set angle for other types
 
-                        minutiae1.setType(MinutiaeTypeEnum.getByCN((int) CN).getCode());
-                        minutiaes.add(minutiae1);
+                        if (minutiae1.getAngle() != -1) {
+                            minutiae1.setType(MinutiaeTypeEnum.getByCN((int) CN).getCode());
+                            minutiaes.add(minutiae1);
+                        }
                     }
                 }
             }
@@ -305,43 +376,45 @@ public class FingerPrintsRecognizer implements Recognizer {
 
     private static double getBifurcationPointAngle(Image tempImageForEndingPointAngleCalculations, int w, int h) {
         List<Double> neighbours = new ArrayList<>();
-        Double[] D = new Double[9];
+        Double[] D = new Double[5];
 
         D[1] = new Double(w + 1, h);
-        D[2] = new Double(w + 1, h - 1);
-        D[3] = new Double(w, h - 1);
-        D[4] = new Double(w - 1, h - 1);
-        D[5] = new Double(w - 1, h);
-        D[6] = new Double(w - 1, h + 1);
-        D[7] = new Double(w, h + 1);
-        D[8] = new Double(w + 1, h + 1);
+        D[2] = new Double(w, h - 1);
+        D[3] = new Double(w - 1, h);
+        D[4] = new Double(w, h + 1);
 
-        for (int i = 1; i <= 8; i++) {
+        for (int i = 1; i <= 4; i++) {
             if (((BufferedImage) tempImageForEndingPointAngleCalculations).getRGB((int) D[i].x, (int) D[i].y) == Color.black.getRGB()) {
-                neighbours.add(D[i]);
+                if (!neighbours.contains(D[i])) {
+                    neighbours.add(D[i]);
+                }
             }
         }
 
+        if (neighbours.size() != 3) {
+            return -1;
+        }
+
         List<java.lang.Double> angles = new ArrayList<>();
-        for(Double point : neighbours) {
-            java.lang.Double angle = getEndingPointAngle(tempImageForEndingPointAngleCalculations, (int)point.x, (int)point.y);
+        for (Double point : neighbours) {
+            java.lang.Double angle = getEndingPointAngle(tempImageForEndingPointAngleCalculations, (int) point.x, (int) point.y);
             if (!angles.contains(angle)) {
                 angles.add(angle);
             }
         }
 
-        if(angles.size() < 3) {
-            return 0;
+        if (angles.size() < 3) {
+            return -1;
         }
 
         double min = 360;
         int a = 0;
         int b = 0;
-        for(int i = 0; i < 3; i++) {
-            for(int j = 0; j < 3; j++) {
-                if(i != j) {
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                if (i != j) {
                     double diff = Math.abs(angles.get(i) - angles.get(j));
-                    if(diff < min) {
+                    if (diff < min) {
                         min = diff;
                         a = i;
                         b = j;
@@ -350,12 +423,12 @@ public class FingerPrintsRecognizer implements Recognizer {
             }
         }
 
-        for(int i = 0; i < 3; i++) {
-            if(i != a && i != b) {
+        for (int i = 0; i < 3; i++) {
+            if (i != a && i != b) {
                 return angles.get(i);
             }
         }
-        return 0;
+        return -1;
     }
 
     private static void drawOval(BufferedImage image, int w, int h, int rgb) {
