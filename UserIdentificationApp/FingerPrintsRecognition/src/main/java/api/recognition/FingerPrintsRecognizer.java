@@ -1,6 +1,7 @@
 package api.recognition;
 
 import api.Recognizer;
+import api.minutiae.MinutiaeSetsComparator;
 import api.user.UserIdentifiedByFingerprintService;
 import api.user.UserServiceImpl;
 import database.finder.MinutiaeSetFinder;
@@ -19,7 +20,6 @@ import java.io.File;
 import static api.image.ImageProcessingUtils.*;
 import static api.minutiae.MinutiaeExtractor.extractMinutiaeSetFromImage;
 import static api.minutiae.MinutiaeExtractor.markBadRegions;
-import static api.minutiae.MinutiaeSetsComparator.compareMinutiaeSets;
 
 /**
  * @author Adam
@@ -102,7 +102,8 @@ public class FingerPrintsRecognizer implements Recognizer {
             log.error("No user with such login! {}", userName);
             return false;
         }
-        return compareMinutiaeSets(minutiaeSet, minutiaeSetFinder.findById(user.getMinutiaeSetId()));
+        MinutiaeSetsComparator minutiaeSetsComparator = new MinutiaeSetsComparator(((BufferedImage)imageFromLines).getWidth(), ((BufferedImage)imageFromLines).getHeight());
+        return minutiaeSetsComparator.compareMinutiaeSets(minutiaeSet, minutiaeSetFinder.findById(user.getMinutiaeSetId()));
     }
 
     public static void displayImage(Image img, int iteration, String windowName) {

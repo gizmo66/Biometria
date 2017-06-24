@@ -395,7 +395,7 @@ public class MinutiaeExtractor {
                     (minutiae2.getType().equals(MinutiaeTypeEnum.BIFURCATION_POINT.getCode()) || minutiae2.getType().equals(MinutiaeTypeEnum.CROSSING_POINT.getCode()))) {
                     double distance = Math.sqrt(Math.pow(minutiae2.getX() - minutiae1.getX(), 2) + Math.pow(minutiae2.getY() - minutiae1.getY(), 2));
                     //TODO remove if they are neighbours on line
-                    if (distance < 5) {
+                    if (distance < 3) {
                         result.add(minutiae1);
                         result.add(minutiae2);
                     }
@@ -412,7 +412,7 @@ public class MinutiaeExtractor {
                 if (!minutiae1.equals(minutiae2) && minutiae1.getType().equals(MinutiaeTypeEnum.ENDING_POINT.getCode()) &&
                     (minutiae2.getType().equals(MinutiaeTypeEnum.ENDING_POINT.getCode()))) {
                     double distance = Math.sqrt(Math.pow(minutiae2.getX() - minutiae1.getX(), 2) + Math.pow(minutiae2.getY() - minutiae1.getY(), 2));
-                    if (distance < 5 && Math.abs(minutiae1.getAngle() - minutiae2.getAngle()) - 180 < 40) {
+                    if (distance < 3 && Math.abs(minutiae1.getAngle() - minutiae2.getAngle()) - 180 < 10) {
                         result.add(minutiae1);
                         result.add(minutiae2);
                     }
@@ -429,7 +429,7 @@ public class MinutiaeExtractor {
                 if (!minutiae1.equals(minutiae2) && minutiae1.getType().equals(MinutiaeTypeEnum.BIFURCATION_POINT.getCode()) &&
                     (minutiae2.getType().equals(MinutiaeTypeEnum.BIFURCATION_POINT.getCode()))) {
                     double distance = Math.sqrt(Math.pow(minutiae2.getX() - minutiae1.getX(), 2) + Math.pow(minutiae2.getY() - minutiae1.getY(), 2));
-                    if (distance < 5) {
+                    if (distance < 3) {
                         result.add(minutiae1);
                         result.add(minutiae2);
                     }
