@@ -73,17 +73,19 @@ public class MinutiaeExtractor {
 
         BufferedImage imageWithValidMinutiaesOnly = new BufferedImage(width, height, BufferedImage.TYPE_3BYTE_BGR);
         BufferedImage imageWithFalseMinutiaes = new BufferedImage(width, height, BufferedImage.TYPE_3BYTE_BGR);
+        BufferedImage temp = new BufferedImage(width, height, BufferedImage.TYPE_3BYTE_BGR);
 
         for (int h = 0; h < height; h++) {
             for (int w = 0; w < width; w++) {
                 imageWithValidMinutiaesOnly.setRGB(w, h, ((BufferedImage) imageFromLines).getRGB(w, h));
                 imageWithFalseMinutiaes.setRGB(w, h, ((BufferedImage) imageFromLines).getRGB(w, h));
+                temp.setRGB(w, h, ((BufferedImage) imageFromLines).getRGB(w, h));
             }
         }
 
         displayImage(upscaleImage((BufferedImage) imageFromLines, 2), 7, "Image from lines");
 
-        List<Minutiae> minutiaes = getAllMinutiaesFromImage(imageFromLines);
+        List<Minutiae> minutiaes = getAllMinutiaesFromImage(imageFromLines, temp);
         List<Minutiae> minutiaesToRemove = getFalseMinutiaes(minutiaes, width, height, imageFromLines, imageWithValidMinutiaesOnly);
 
         for (Minutiae minutiae : minutiaes) {
@@ -99,16 +101,18 @@ public class MinutiaeExtractor {
         displayImage(upscaleImage(imageWithFalseMinutiaes, 2), 6, "False minutiaes");
 
         img = upscaleImage((BufferedImage) img, 0.5f);
-        markMinutiaesOnImage((BufferedImage) img, minutiaes);
+        markMinutiaesOnImage((BufferedImage) img, imageFromLines, temp, minutiaes);
         saveToSvg(img, "image_with_valid_minutiaes_only");
         displayImage(upscaleImage((BufferedImage) img, 2), 8, "Valid minutiaes");
+        displayImage(upscaleImage(temp, 2), 5, "Temp");
+        saveToSvg(temp, "temp");
 
         MinutiaeSet minutiaeSet = new MinutiaeSet();
         minutiaeSet.setMinutiaeList(minutiaes);
         return minutiaeSet;
     }
 
-    private static void markMinutiaesOnImage(BufferedImage imageWithValidMinutiaesOnly, List<Minutiae> minutiaes) {
+    private static void markMinutiaesOnImage(BufferedImage imageWithValidMinutiaesOnly, Image imageFromLines, BufferedImage temp, List<Minutiae> minutiaes) {
         for (Minutiae minutiae : minutiaes) {
             int w = minutiae.getX();
             int h = minutiae.getY();
@@ -123,11 +127,21 @@ public class MinutiaeExtractor {
                 rgb = Color.MAGENTA.getRGB();
             }
             drawOval(imageWithValidMinutiaesOnly, w, h, rgb);
-            drawAngle(imageWithValidMinutiaesOnly, w, h, minutiae.getAngle(), 5, Color.red.getRGB());
+
+            if (CN == 1) {
+                minutiae.setAngle(getEndingPointAngle(imageFromLines, temp, new ArrayList<>(), w, h));
+            } else if (CN == 3) {
+                minutiae.setAngle(getBifurcationPointAngle(imageFromLines, temp, w, h));
+            } else if (CN > 3) {
+
+            }
+            //TODO set angle for other types
+
+            drawAngle(imageWithValidMinutiaesOnly, w, h, (int) minutiae.getAngle(), 5, Color.red.getRGB());
         }
     }
 
-    private static void drawAngle(BufferedImage image, int w, int h, double angle, int length, int rgb) {
+    private static void drawAngle(BufferedImage image, int w, int h, int angle, int length, int rgb) {
         Double currentPixel = new Double(w, h);
         Double pixelToPaint = new Double(w + 1, h + 1);
         double farthestAngle = angle >= 180 ? 0 : 360;
@@ -163,8 +177,7 @@ public class MinutiaeExtractor {
         }
     }
 
-    private static double getEndingPointAngle(Image image, int w, int h) {
-        List<Double> points = new ArrayList<>();
+    private static double getEndingPointAngle(Image image, BufferedImage temp, List<Double> points, int w, int h) {
         Double neighbour = getNeighbourOnLine(image, points, w, h);
         points.add(new Double(w, h));
         Double current = neighbour;
@@ -173,6 +186,7 @@ public class MinutiaeExtractor {
         int weights = 0;
         for (int i = 0; i < 15; i++) {
             current = getNeighbourOnLine(image, points, (int) current.x, (int) current.y);
+            temp.setRGB((int)current.x, (int)current.y, Color.CYAN.getRGB());
             int weight = 14 - i;
             weights += weight;
             double angle = getAngleOfLineBetweenTwoPoints(neighbour, current);
@@ -190,7 +204,7 @@ public class MinutiaeExtractor {
         }
     }
 
-    private static List<Minutiae> getAllMinutiaesFromImage(Image image) {
+    private static List<Minutiae> getAllMinutiaesFromImage(Image image, Image temp) {
         int height = ((BufferedImage) image).getHeight();
         int width = ((BufferedImage) image).getWidth();
 
@@ -222,16 +236,6 @@ public class MinutiaeExtractor {
                         Minutiae minutiae1 = new Minutiae();
                         minutiae1.setX(w);
                         minutiae1.setY(h);
-
-                        if (CN == 1) {
-                            minutiae1.setAngle(getEndingPointAngle(image, w, h));
-                        } else if (CN == 3) {
-                            minutiae1.setAngle(getBifurcationPointAngle(image, w, h));
-                        } else if (CN > 3) {
-
-                        }
-                        //TODO set angle for other types
-
                         minutiae1.setType(MinutiaeTypeEnum.getByCN((int) CN).getCode());
                         minutiaes.add(minutiae1);
                     }
@@ -241,35 +245,42 @@ public class MinutiaeExtractor {
         return minutiaes;
     }
 
-    private static double getBifurcationPointAngle(Image image, int w, int h) {
-
-        //FIXME akolodziejek: nie działa jeszcze najlepiej, problem chyba z znajdowaniem sąsiednich pixeli do minucji
-
+    private static double getBifurcationPointAngle(Image image, BufferedImage temp, int w, int h) {
         List<Double> neighbours = new ArrayList<>();
-        Double[] D = new Double[9];
+        Double[] D = new Double[5];
 
         D[1] = new Double(w + 1, h);
-        D[2] = new Double(w + 1, h - 1);
-        D[3] = new Double(w, h - 1);
-        D[4] = new Double(w - 1, h - 1);
-        D[5] = new Double(w - 1, h);
-        D[6] = new Double(w - 1, h + 1);
-        D[7] = new Double(w, h + 1);
-        D[8] = new Double(w + 1, h + 1);
+        D[2] = new Double(w, h - 1);
+        D[3] = new Double(w - 1, h);
+        D[4] = new Double(w, h + 1);
 
         for (int i = 1; i <= 4; i++) {
             if (((BufferedImage) image).getRGB((int) D[i].x, (int) D[i].y) == Color.black.getRGB()) {
                 neighbours.add(D[i]);
             }
         }
+        Color[] colors = new Color[4];
+        colors[0] = Color.red;
+        colors[1] = Color.green;
+        colors[2] = Color.blue;
+        colors[3] = Color.yellow;
 
         List<java.lang.Double> angles = new ArrayList<>();
+        int count = 0;
+        List<Double> neighboursTemp = new ArrayList<>();
+        neighboursTemp.addAll(neighbours);
         for (Double point : neighbours) {
-            java.lang.Double angle = getEndingPointAngle(image, (int) point.x, (int) point.y);
+            neighboursTemp.add(point);
+            neighboursTemp.add(new Double(w,h));
+            double angle = getEndingPointAngle(image, temp, neighboursTemp, (int) point.x, (int) point.y);
             angles.add(angle);
+            //log.info("angle: " + angle);
+            temp.setRGB((int)point.x, (int)point.y, colors[count].getRGB());
+            drawAngle(temp, (int) point.x, (int) point.y, (int) angle, 15, colors[count].getRGB());
+            count++;
         }
 
-        if (angles.size() < 3) {
+        if(angles.size() != 3) {
             return -1;
         }
 

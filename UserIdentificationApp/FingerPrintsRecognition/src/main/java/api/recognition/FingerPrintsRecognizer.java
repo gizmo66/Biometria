@@ -64,7 +64,7 @@ public class FingerPrintsRecognizer implements Recognizer {
 
     private boolean identifyUser(Image img, String userName) {
         Image imageFromLines = processImage(img);
-        return compareToStoredFingerprint(imageFromLines, img, userName);
+        return compareToStoredFingerprint(imageFromLines, stretchHistogram(img), userName);
     }
 
     private Image processImage(Image img) {
@@ -122,7 +122,7 @@ public class FingerPrintsRecognizer implements Recognizer {
     public void saveUserFingerPrintInfo(String userName, File fingerPrintImage) {
         Integer userId = userService.createOrUpdateUser(userName);
         BufferedImage image = (BufferedImage) fileToImage(fingerPrintImage);
-        MinutiaeSet minutiaeSet = extractMinutiaeSetFromImage(processImage(image), image);
+        MinutiaeSet minutiaeSet = extractMinutiaeSetFromImage(processImage(image), stretchHistogram(image));
         minutiaeSet.setUserId(userId);
         userIdentifiedByFingerPrintService.setMinutiaeSet(userId, minutiaeSet);
     }
